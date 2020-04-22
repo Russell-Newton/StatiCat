@@ -175,12 +175,10 @@ class General(commands.Cog):
     @commands.command()
     async def flip(self, ctx):
         """Flip a coin."""
-        await ctx.send("It's {}!".format(choice("heads", "tails")))
+        await ctx.send("It's {}!".format(choice(("heads", "tails"))))
 
     @commands.command()
-    async def roll(self, ctx, sides: Optional[int]):
+    async def roll(self, ctx, sides: Optional[int]=6):
         """Roll a dice. Default 6 sides"""
-        if sides is None:
-            sides = 6
         await ctx.send("It's {}!".format(choice(range(sides))))
 
