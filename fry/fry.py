@@ -35,6 +35,8 @@ class Fry(commands.Cog):
 
         Will not include a buldge by default"""
         image = Image
+        if len(ctx.message.attachments) is 0:
+            await ctx.send("You have to attach an image.")
         try:
             for attachment in ctx.message.attachments:
                 temp_loc = self.directory + str(datetime.now().microsecond)

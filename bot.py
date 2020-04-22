@@ -168,6 +168,8 @@ class StatiCatHelpCommand(commands.HelpCommand):
 
     async def send_cog_help(self, cog):
         filtered = await self.filter_commands(cog.get_commands(), sort=True)
+        if cog.description:
+            self.embedinator.add_line(cog.description)
         self.add_command_block("__**Commands:**__", filtered)
 
         await self.send_pages(color=self.palette[7])
