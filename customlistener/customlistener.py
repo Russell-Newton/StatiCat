@@ -55,7 +55,7 @@ class CustomListener(CogWithData):
             self.data[str(ctx.guild.id)] = {}
         self.data[str(ctx.guild.id)][name] = listener
         self.set_data_file()
-        await ctx.send("Added {}!".format(name))
+        # await ctx.send("Added {}!".format(name))
 
     @check_in_guild()
     @custom_listeners.command(name="remove")
