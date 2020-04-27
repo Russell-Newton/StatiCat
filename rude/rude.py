@@ -1,31 +1,26 @@
-import json
 from random import choice
 from typing import Union
 
 import discord
 import discord.ext.commands as commands
 
+from checks import check_permissions
+from cogwithdata import CogWithData
 
-class Rude(commands.Cog):
-    def __init__(self, bot):
-        self.bot: commands.Bot = bot
+
+class Rude(CogWithData):
+    def __init__(self, bot: commands.Bot):
+        self.bot = bot
         self.directory = "rude/"
-        self.data_file = self.directory + "targets.json"
-        self.data = self.get_data()
+        super().__init__(self.directory + "targets.json")
 
-    def get_data(self):
-        with open(self.data_file, 'r') as file:
-            return json.load(file)
-
-    def set_data_file(self):
-        with open(self.data_file, 'w') as file:
-            json.dump(self.data, file)
-
+    @check_permissions(['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members'], False)
     @commands.group(name="mimic", pass_context=True)
     async def _mimic(self, ctx):
         """Manage the mimicking status"""
         pass
 
+    @check_permissions(['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members'], False)
     @commands.group(pass_context=True)
     async def silence(self, ctx):
         """Manage the silencing status"""
@@ -57,7 +52,6 @@ class Rude(commands.Cog):
         self.set_data_file()
 
         await ctx.send("I'll stop now.")
-
 
     @silence.command(name="add", pass_context=True)
     async def silence_add(self, ctx, target: Union[discord.Member, discord.User]):
@@ -101,7 +95,8 @@ class Rude(commands.Cog):
             return chosen()
         return chosen
 
-    def get_random_guild_member(self, input_message) -> discord.Member:
+    @staticmethod
+    def get_random_guild_member(input_message) -> discord.Member:
         guild: discord.Guild = input_message.guild
         chosen: discord.Member = choice(guild.members)
         while chosen.id is input_message.author.id:

@@ -1,9 +1,9 @@
-import contextlib
 import json
 import os
 from datetime import datetime
 from io import BytesIO
 from math import ceil
+from random import choice
 from typing import Union, List, Optional
 
 import discord
@@ -13,8 +13,6 @@ from PIL import Image, ImageDraw
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-
-from random import choice
 
 
 class UnavailablePokemonError(ValueError):
@@ -178,7 +176,6 @@ class General(commands.Cog):
         await ctx.send("It's {}!".format(choice(("heads", "tails"))))
 
     @commands.command()
-    async def roll(self, ctx, sides: Optional[int]=6):
+    async def roll(self, ctx, sides: Optional[int] = 6):
         """Roll a dice. Default 6 sides"""
         await ctx.send("It's {}!".format(choice(range(sides))))
-

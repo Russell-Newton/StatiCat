@@ -1,7 +1,8 @@
 # noinspection PyUnresolvedReferences
+from random import randint, choice
+
 import discord
 import discord.ext.commands as commands
-from random import randint, choice
 
 __author__ = "ScarletRav3n"
 
@@ -28,17 +29,17 @@ class Fun(commands.Cog):
         if user.id == self.bot.user.id:
             await ctx.send("I'm not the fighting kind" + k)
         elif user.nick == "Soham":
-            await ctx.send(author.mention + " and " + user.mention + " dueled for " + str(randint(2,120)) +
-                               " gruesome hours! It was a long, heated battle, but " + user.mention + 
-                               " came out victorious!" + k)
+            await ctx.send(author.mention + " and " + user.mention + " dueled for " + str(randint(2, 120)) +
+                           " gruesome hours! It was a long, heated battle, but " + user.mention +
+                           " came out victorious!" + k)
         elif author.nick == "Soham":
-            await ctx.send(author.mention + " and " + user.mention + " dueled for " + str(randint(2,120)) +
-                               " gruesome hours! It was a long, heated battle, but " + author.mention +
-                               " came out victorious!" + k)
+            await ctx.send(author.mention + " and " + user.mention + " dueled for " + str(randint(2, 120)) +
+                           " gruesome hours! It was a long, heated battle, but " + author.mention +
+                           " came out victorious!" + k)
         else:
             await ctx.send(author.mention + " and " + user.mention + " dueled for " + str(randint(2, 120)) +
-                               " gruesome hours! It was a long, heated battle, but " +
-                               choice([author.mention, user.mention]) + " came out victorious!" + k)
+                           " gruesome hours! It was a long, heated battle, but " +
+                           choice([author.mention, user.mention]) + " came out victorious!" + k)
 
     @commands.command()
     async def love(self, ctx, user: discord.Member):
@@ -54,7 +55,7 @@ class Fun(commands.Cog):
             await ctx.send("I am not capable of loving like you can. I'm sorry." + k)
         else:
             await ctx.send(author.mention + " is capable of loving " + user.mention + " a whopping " +
-                               str(randint(0, 100)) + "%!" + k)
+                           str(randint(0, 100)) + "%!" + k)
 
     @commands.command()
     async def squat(self, ctx):
@@ -67,7 +68,7 @@ class Fun(commands.Cog):
         else:
             k = ""
         await ctx.send(author.mention + " puts on their game face and does " + str(randint(2, 1000)) +
-                           " squats in " + str(randint(4, 90)) + " minutes. Wurk it!" + k)
+                       " squats in " + str(randint(4, 90)) + " minutes. Wurk it!" + k)
 
     @commands.command()
     async def pizza(self, ctx):
@@ -92,7 +93,7 @@ class Fun(commands.Cog):
         else:
             k = ""
         await ctx.send(author.mention + " has bribed " + self.bot.user.mention + " with " +
-                           str(randint(10, 10000)) + " dollars!" + k)
+                       str(randint(10, 10000)) + " dollars!" + k)
 
     @commands.command()
     async def daddy(self, ctx):

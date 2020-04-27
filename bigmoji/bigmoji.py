@@ -1,18 +1,20 @@
 import asyncio
 import functools
 import io
-import unicodedata
 
 import aiohttp
 import discord
 import discord.ext.commands as commands
+import unicodedata
 
 try:
     import cairosvg
+
     svg_convert = 'cairo'
 except:
     try:
         from wand.image import Image
+
         svg_convert = 'wand'
     except:
         svg_convert = None
@@ -21,7 +23,6 @@ BaseCog = getattr(commands, "Cog", object)
 
 
 class Bigmoji(BaseCog):
-
     """Emoji tools"""
 
     def __init__(self, bot):

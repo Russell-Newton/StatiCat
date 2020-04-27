@@ -8,6 +8,8 @@ from importlib.machinery import ModuleSpec
 
 import discord.ext.commands as commands
 
+from bot import Embedinator
+
 
 class Cogs(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -15,6 +17,7 @@ class Cogs(commands.Cog):
         Commands for managing cogs.
         """
         self.bot: commands.Bot = bot
+        self.embedinator = Embedinator(**{"title": "**Cogs**"})
 
     @commands.is_owner()
     @commands.command()
@@ -94,8 +97,12 @@ class Cogs(commands.Cog):
         """
         List all loaded cogs.
         """
+        self.embedinator.footer = "Type `{0.prefix}help <cog name>` for more info about a cog.".format(ctx)
         for cog_name in sorted(self.bot.cogs):
-            await ctx.send(cog_name)
+            self.embedinator.add_line("{}".format(cog_name))
+        for embed in self.embedinator.as_embeds(thumbnail_url=self.bot.user.avatar_url):
+            await ctx.send(embed=embed)
+        self.embedinator.clear()
 
     @staticmethod
     def remove_cog_from_data(cog_name):
@@ -111,6 +118,7 @@ class Cogs(commands.Cog):
             data = json.load(file)
         with open("global_data.json", 'w') as file:
             data["loaded cogs"].append(cog_name)
+            data["loaded cogs"] = sorted(data["loaded cogs"])
             json.dump(data, file)
 
     @staticmethod

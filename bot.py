@@ -5,7 +5,7 @@ import logging
 import traceback
 from importlib import import_module
 from importlib.machinery import ModuleSpec
-from typing import Iterable, Union, List
+from typing import Union, List
 
 import discord
 import discord.ext.commands as commands
@@ -29,18 +29,23 @@ def get_color_palette() -> List[discord.Color]:
 
 
 class Embedinator(commands.Paginator):
+    """
+    Can be used to create custom embeds.
+    Some variables can be set on initialization:
+        max_size
+        color
+        title
+        footer
+    """
+
     def __init__(self, **options):
-        super().__init__(prefix=None, suffix=None, **options)
+        """
+        :param options: max_size, color, title, and footer can be set on initialization.
+        """
+        super().__init__(prefix=None, suffix=None, max_size=options.pop('max_size', 2000))
         self.color = options.pop('color', discord.Color(int(0x7bacf6)))
-        self._footer: str = ''
-
-    @property
-    def footer(self) -> str:
-        return self._footer
-
-    @footer.setter
-    def footer(self, value: str):
-        self._footer = value
+        self.title = options.pop('title', "**Help Menu**")
+        self.footer: str = options.pop('footer', "")
 
     @staticmethod
     def add_field_fix_empty_strings(embed: discord.Embed, field_title: str, field_content: str):
@@ -53,14 +58,14 @@ class Embedinator(commands.Paginator):
             else:
                 embed.add_field(name=field_title, value=field_content, inline=False)
 
-    def as_embeds(self, thumbnail_url, color: discord.Color=None) -> List[discord.Embed]:
+    def as_embeds(self, thumbnail_url, color: discord.Color = None) -> List[discord.Embed]:
         embeds = []
         field_title = ""
         if color is None:
             color = self.color
         for page, number in zip(self.pages, range(len(self.pages))):
             field_content = ""
-            embed = discord.Embed(title="**StatiCat Help Menu**",
+            embed = discord.Embed(title=self.title,
                                   color=color,
                                   description="*Page {} of {}*".format(str(number + 1), len(self.pages))
                                   ).set_thumbnail(
@@ -87,7 +92,7 @@ class Embedinator(commands.Paginator):
         return embeds
 
 
-class StatiCatHelpCommand(commands.HelpCommand):
+class EmbeddingHelpCommand(commands.HelpCommand):
     def __init__(self, **options):
         super().__init__(**options)
         self.width: int = options.pop('width', 100)
@@ -99,11 +104,12 @@ class StatiCatHelpCommand(commands.HelpCommand):
 
     async def send_pages(self, **options):
         destination = self.get_destination()
-        self.embedinator.footer = "Type {0}help <command> for more info on a command. You can also type {0}help <category> for more info on a category.".format(
+        self.embedinator.footer = "Type `{0}help <command>` for more info on a command. You can also type `{0}help <category>` for more info on a category.".format(
             self.context.prefix)
 
         for embed in self.embedinator.as_embeds(thumbnail_url=self.context.bot.user.avatar_url, **options):
             await destination.send(embed=embed)
+        self.embedinator.clear()
 
     def shorten_text(self, text):
         """Shortens text to fit into the :attr:`width`."""
@@ -118,9 +124,9 @@ class StatiCatHelpCommand(commands.HelpCommand):
         return ctx.channel
 
     def add_command_block(self, cog_name, _commands):
-            self.embedinator.add_line(cog_name)
-            for command in _commands:
-                self.embedinator.add_line(self.format_command_info(command))
+        self.embedinator.add_line(cog_name)
+        for command in _commands:
+            self.embedinator.add_line(self.format_command_info(command))
 
     def add_command_syntax(self, command):
         signature = self.get_command_signature(command)
@@ -141,7 +147,6 @@ class StatiCatHelpCommand(commands.HelpCommand):
                 for line in command.help.splitlines():
                     self.embedinator.add_line(line)
                 self.embedinator.add_line()
-
 
     def format_command_info(self, command: commands.Command):
         return self.shorten_text("**{0.name}** {0.short_doc}".format(command))
@@ -194,8 +199,7 @@ class StatiCatHelpCommand(commands.HelpCommand):
 
 class StatiCat(commands.Bot):
     def __init__(self):
-        help_command: StatiCatHelpCommand = StatiCatHelpCommand()
-        super().__init__(command_prefix=get_prefixes, help_command=help_command)
+        super().__init__(command_prefix=get_prefixes)
 
     @staticmethod
     def print_invite_link():
@@ -223,8 +227,8 @@ class StatiCat(commands.Bot):
             try:
                 await self._load_cog_silent(cog)
                 print("Loaded {}!".format(cog))
-            except Exception as e:
-                print(str(e))
+            except Exception as error:
+                traceback.print_exception(type(error), error, error.__traceback__)
         print("Done!\n")
 
     async def _load_cog_silent(self, cog_name):
@@ -257,19 +261,26 @@ class StatiCat(commands.Bot):
             print(str(e))
 
     async def on_ready(self):
-        await self.load_cogs()
         print('Logged in as {0.user}'.format(self))
+
+        await self.load_cogs()
+        self.help_command = EmbeddingHelpCommand(**{"title": "{} Help Menu".format(self.user.name)})
         self.print_invite_link()
         await self.change_presence(activity=discord.Game(name="Type s!help for help!"))
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
+        if isinstance(error, commands.CheckFailure):
+            return
+        if isinstance(error, commands.MissingRequiredArgument):
+            await ctx.send(
+                "Missing required arguments. Try `{0.prefix}help <command_name>` for usage information!".format(ctx))
+            return
         if not isinstance(error, commands.CommandNotFound):
             traceback.print_exception(type(error), error, error.__traceback__)
             await ctx.send(
-                "Oops! You just caused an error ({})! Try `{}help <command_name>` for usage information!".format(
-                    error.__cause__.__class__.__name__, ctx.prefix))
+                "Oops! You just caused an error ({} caused by {})! Try `{}help <command_name>` for usage information!".format(
+                    error.__class__.__name__, error.__cause__.__class__.__name__, ctx.prefix))
 
 
 if __name__ == '__main__':
     bot = StatiCat()
-    bot.run('')

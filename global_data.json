@@ -1,1 +1,1 @@
-{"prefixes": ["s!"], "loaded cogs": ["Cogs", "Rude", "Bigmoji", "Fun", "Dad", "BrailleArt", "Fry", "Say", "General"], "color palette": ["0x7bacf6", "0x627bb4", "0x41416a", "0x736252", "0xb49c5a", "0x313141", "0x4a4a62", "0xffe65a", "0xffffff", "0xe64a52", "0x943952"]}
+{"prefixes": ["s!", "S!"], "loaded cogs": ["Bigmoji", "BrailleArt", "Cogs", "CustomListener", "Dad", "Fry", "Fun", "General", "Rude", "Say"], "color palette": ["0x7bacf6", "0x627bb4", "0x41416a", "0x736252", "0xb49c5a", "0x313141", "0x4a4a62", "0xffe65a", "0xffffff", "0xe64a52", "0x943952"]}
