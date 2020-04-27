@@ -10,8 +10,6 @@ from typing import Union, List
 import discord
 import discord.ext.commands as commands
 
-from checks import NoPermissionError
-
 logging.basicConfig(level=logging.ERROR)
 
 
@@ -271,11 +269,7 @@ class StatiCat(commands.Bot):
         await self.change_presence(activity=discord.Game(name="Type s!help for help!"))
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
-        if isinstance(error, NoPermissionError):
-            await ctx.send("You don't have permission to use that")
-            return
         if isinstance(error, commands.CheckFailure):
-            traceback.print_exception(type(error), error, error.__traceback__)
             return
         if isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(
@@ -290,4 +284,4 @@ class StatiCat(commands.Bot):
 
 if __name__ == '__main__':
     bot = StatiCat()
-    bot.run('NzAyMjA1NzQ2NDkzOTE1MjU4.XqZoxA.TRXGmAn48lc9HDEPlcGP0ohBKdc')
+    bot.run('<api token>')
