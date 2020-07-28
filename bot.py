@@ -290,4 +290,4 @@ class StatiCat(commands.Bot):
 
 if __name__ == '__main__':
     bot = StatiCat()
-    bot.run('NzAyMjA1NzQ2NDkzOTE1MjU4.Xp8qEA.s166T22nbrYZAF9_hr4IDpJSj7k')
+    bot.run('TOKEN')
