@@ -30,7 +30,9 @@ def check_permissions(permissions: List[str], check_all: bool = True):
                 raise NoPermissionError
             elif not check_all and has_permission:
                 return True
-        return check_all
+        if check_all:
+            return True
+        raise NoPermissionError
 
     return commands.check(predicate)
 

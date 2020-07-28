@@ -21,8 +21,8 @@ class Dad(commands.Cog):
     async def on_message(self, message: discord.Message):
         channel = message.channel
         if message.author.id != self.bot.user.id:
-            if message.content.lower().startswith("i'm") or message.content.lower().startswith(
-                    'im') or message.content.lower().startswith('i am'):
+            if message.content.lower().startswith("i'm ") or message.content.lower().startswith(
+                    'im ') or message.content.lower().startswith('i am '):
                 nameStart = message.content.find('m') + 1
                 nameEnd = message.content.find('.')
                 if nameEnd > 0:

@@ -5,6 +5,7 @@ import json
 import sys
 from importlib import import_module
 from importlib.machinery import ModuleSpec
+import traceback
 
 import discord.ext.commands as commands
 
@@ -34,8 +35,10 @@ class Cogs(commands.Cog):
             mod: ModuleSpec = import_module(cog_name.lower()).__spec__
             self._cleanup_and_refresh_modules(mod.name)
         except ImportError as e:
-            if e.name.lower() == cog_name.lower():
-                await ctx.send("No cog of the name '{}' was found.".format(cog_name))
+            # if e.name.lower() == cog_name.lower():
+            #     await ctx.send("No cog of the name '{}' was found.".format(cog_name))
+            traceback.print_exception(type(e), e, e.__traceback__)
+            await ctx.send(str(e))
             return
 
         lib = mod.loader.load_module()
@@ -55,6 +58,7 @@ class Cogs(commands.Cog):
             if not suppress_end_message:
                 await ctx.send("Loaded {}!".format(cog_name))
         except Exception as e:
+            traceback.print_exception(type(e), e, e.__traceback__)
             await ctx.send(str(e))
 
     @commands.is_owner()

@@ -54,7 +54,7 @@ class CustomListener(CogWithData):
         if str(ctx.guild.id) not in self.data:
             self.data[str(ctx.guild.id)] = {}
         self.data[str(ctx.guild.id)][name] = listener
-        self.set_data_file()
+        self.update_data_file()
         # await ctx.send("Added {}!".format(name))
 
     @check_in_guild()
@@ -68,7 +68,7 @@ class CustomListener(CogWithData):
         """
         try:
             del self.data[str(ctx.guild.id)][name]
-            self.set_data_file()
+            self.update_data_file()
             await ctx.send("Removed {}!".format(name))
         except KeyError:
             await ctx.send("There isn't a listener named {} for this server.".format(name))

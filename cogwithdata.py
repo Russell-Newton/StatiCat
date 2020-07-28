@@ -19,10 +19,16 @@ class CogWithData(commands.Cog):
         """
         Save the contents of the json file to self.data.
         """
-        with open(self.data_file_location, 'r') as file:
-            return json.load(file)
+        try:
+            with open(self.data_file_location, 'r') as file:
+                return json.load(file)
+        except FileNotFoundError:
+            with open(self.data_file_location, 'w') as file:
+                # print("Making {}".format(self.data_file_location))
+                file.write("{}")
+            return self._get_data()
 
-    def set_data_file(self) -> None:
+    def update_data_file(self) -> None:
         """
         Save the contents of self.data to the json file.
         """
