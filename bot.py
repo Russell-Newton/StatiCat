@@ -51,11 +51,11 @@ class Embedinator(commands.Paginator):
 
     @staticmethod
     def add_field_fix_empty_strings(embed: discord.Embed, field_title: str, field_content: str):
-        if field_title is "":
-            if field_content is not "":
+        if field_title == "":
+            if field_content != "":
                 embed.add_field(name="\u2800", value=field_content, inline=False)
         else:
-            if field_content is "":
+            if field_content == "":
                 embed.add_field(name=field_title, value="\u2800", inline=False)
             else:
                 embed.add_field(name=field_title, value=field_content, inline=False)
@@ -77,7 +77,7 @@ class Embedinator(commands.Paginator):
 
             lines = page.splitlines()
 
-            if not lines[0].startswith("__") and not lines[0].endswith("__") and number is not 0:
+            if not lines[0].startswith("__") and not lines[0].endswith("__") and number != 0:
                 field_title = field_title + " (cont.)"
 
             for line in lines:
