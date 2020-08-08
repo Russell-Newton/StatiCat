@@ -271,17 +271,20 @@ class StatiCat(commands.Bot):
         await self.change_presence(activity=discord.Game(name="Type s!help for help!"))
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
-        if isinstance(error, NoPermissionError):
-            await ctx.send("You don't have permission to use that")
-            return
         if isinstance(error, commands.CheckFailure):
             traceback.print_exception(type(error), error, error.__traceback__)
             return
-        if isinstance(error, commands.MissingRequiredArgument):
+        if isinstance(error, NoPermissionError):
+            await ctx.send("You don't have permission to use that")
+            return
+        elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(
                 "Missing required arguments. Try `{0.prefix}help <command_name>` for usage information!".format(ctx))
             return
-        if not isinstance(error, commands.CommandNotFound):
+        elif isinstance(error, commands.BadArgument):
+            await ctx.send("Bad argument. {}".format(str(error)))
+            await ctx.send("Try `{0.prefix}help <command_name>` for usage information!".format(ctx))
+        elif not isinstance(error, commands.CommandNotFound):
             traceback.print_exception(type(error), error, error.__traceback__)
             await ctx.send(
                 "Oops! You just caused an error ({} caused by {})! Try `{}help <command_name>` for usage information!".format(
