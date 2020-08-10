@@ -54,8 +54,9 @@ class Dad(CogWithData):
                     await channel.send("\"{}\"? I hardly even know her!".format(word))
                     return
 
-            if message.guild.id in self.data["blacklist"]:
-                return
+            if message.guild is not None:
+                if message.guild.id in self.data["blacklist"]:
+                   return
             if content.lower().startswith("i'm ") or content.lower().startswith(
                     'im ') or content.lower().startswith('i am '):
                 nameStart = content.find('m') + 1

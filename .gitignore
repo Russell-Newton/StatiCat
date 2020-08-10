@@ -73,3 +73,5 @@ fabric.properties
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+deepfake/vox-cpk.pth.tar
+deepfake/vox-adv-cpk.pth.tar

@@ -1,5 +1,6 @@
 import discord
 import discord.ext.commands as commands
+from checks import check_in_guild
 
 
 class Say(commands.Cog):
@@ -25,6 +26,17 @@ class Say(commands.Cog):
             await ctx.message.delete()
         except discord.Forbidden:
             pass
+
+    @check_in_guild()
+    @commands.command(name="privatemessage", aliases=["pm"])
+    async def send_private_message(self, ctx: commands.Context, target: discord.Member, *, message):
+        try:
+            await target.send(message)
+            await ctx.message.delete()
+        except discord.Forbidden:
+            pass
+        except discord.HTTPException:
+            await ctx.send("Oops I had some trouble sending that.")
 
     """
     @commands.command()
