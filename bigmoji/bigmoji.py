@@ -7,6 +7,8 @@ import discord
 import discord.ext.commands as commands
 import unicodedata
 
+from bot import StatiCat
+
 try:
     import cairosvg
 
@@ -25,7 +27,7 @@ BaseCog = getattr(commands, "Cog", object)
 class Bigmoji(BaseCog):
     """Emoji tools"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: StatiCat):
         self.bot = bot
         self.session = aiohttp.ClientSession()
         if svg_convert == 'cairo':

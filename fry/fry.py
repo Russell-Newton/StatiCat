@@ -13,11 +13,13 @@ import progressbar
 from PIL import Image
 from imutils import face_utils
 
+from bot import StatiCat
+
 
 class Fry(commands.Cog):
     """Fries an image. Thanks /u/DeepFryBot for being open source!"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: StatiCat):
         self.bot = bot
 
         self.directory = 'fry/'

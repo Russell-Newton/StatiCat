@@ -1,15 +1,16 @@
 from typing import Union
+import re
 
 import discord
 import discord.ext.commands as commands
 
-from bot import Embedinator
+from bot import Embedinator, StatiCat
 from checks import check_permissions, check_in_guild, check_in_private
 from cogwithdata import CogWithData
 
 
 class CustomListener(CogWithData):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: StatiCat):
         self.bot = bot
         self.directory = "customlistener/"
         super().__init__(self.directory + "listeners.json")
@@ -55,7 +56,7 @@ class CustomListener(CogWithData):
             self.data[str(ctx.guild.id)] = {}
         self.data[str(ctx.guild.id)][name] = listener
         self.update_data_file()
-        # await ctx.send("Added {}!".format(name))
+        # await ctx.send("Added {}!".re_format(name))
 
     @check_in_guild()
     @custom_listeners.command(name="remove")
@@ -119,11 +120,14 @@ class CustomListener(CogWithData):
         self.embedinator.clear()
 
     def check_message(self, method: str, keyword: str, message: discord.Message):
+        pattern_string = r'(?P<key>' + keyword + r')'
         if method == self.method_options[0]:
-            return keyword.lower() in message.content.lower()
+            pattern = re.compile(pattern_string, re.IGNORECASE)
         elif method == self.method_options[1]:
-            return message.content.lower().startswith(keyword.lower())
-        return message.content.lower().endswith(keyword.lower())
+            pattern = re.compile(r'^' + pattern_string, re.IGNORECASE)
+        else:
+            pattern = re.compile(pattern_string + r'$', re.IGNORECASE)
+        return pattern.search(message.content) is not None
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):

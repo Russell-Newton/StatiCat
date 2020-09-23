@@ -11,14 +11,14 @@ from skimage import img_as_ubyte
 from skimage.transform import resize
 import cv2
 
-from cogwithdata import CogWithData
+from bot import StatiCat
 from .first_order_model.demo import load_checkpoints, make_animation
 
 
 class DeepFake(commands.Cog):
     """Based on https://github.com/AliaksandrSiarohin/first-order-model"""
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: StatiCat):
         self.bot = bot
         self.directory = "deepfake/"
         self.bm_input_image = self.directory + 'bm_image.png'

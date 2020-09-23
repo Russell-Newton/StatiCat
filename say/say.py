@@ -1,12 +1,14 @@
 import discord
 import discord.ext.commands as commands
+
+from bot import StatiCat
 from checks import check_in_guild
 
 
 class Say(commands.Cog):
     """Makes the bot say stuff"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: StatiCat):
         self.bot = bot
 
     @commands.command()

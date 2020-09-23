@@ -1,3 +1,4 @@
+import math
 import os
 import random
 import sys
@@ -6,11 +7,13 @@ import aiohttp
 import discord.ext.commands as commands
 from PIL import Image
 
+from bot import StatiCat
+
 
 class BrailleArt(commands.Cog):
     """Converts an image into a rough Braille Interpretation"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: StatiCat):
         self.bot = bot
         self.average = lambda x: sum(x) / len(x) if len(x) > 0 else 0
         self.directory = '/usr/mycogs/brailleart/'

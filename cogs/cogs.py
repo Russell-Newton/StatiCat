@@ -9,11 +9,11 @@ import traceback
 
 import discord.ext.commands as commands
 
-from bot import Embedinator
+from bot import Embedinator, StatiCat
 
 
 class Cogs(commands.Cog):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: StatiCat):
         """
         Commands for managing cogs.
         """

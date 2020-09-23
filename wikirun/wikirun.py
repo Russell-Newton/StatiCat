@@ -2,6 +2,7 @@ import discord.ext.commands as commands
 import wikipedia
 from requests.utils import requote_uri
 
+from bot import StatiCat
 from cogwithdata import CogWithData
 
 
@@ -11,7 +12,7 @@ class WikiRun(CogWithData):
     Get random start and ending pages for a run as well as the fastest paths between the two!
     """
 
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: StatiCat):
         self.bot = bot
         self.directory = "wikirun/"
         super().__init__(self.directory + "stats.json")

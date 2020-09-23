@@ -2,15 +2,18 @@ import discord
 import discord.ext.commands as commands
 import requests
 from lxml import html
+
+from bot import StatiCat
 from cogwithdata import CogWithData
-from random import randrange
+from random import random
 
 class Dad(CogWithData):
     """Dad-Bot"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: StatiCat):
         self.bot = bot
         super().__init__("dad/imdadblacklist.json")
+        self.funny_chance = 0.02
 
     @commands.command()
     async def dadjoke(self, ctx):
@@ -50,7 +53,9 @@ class Dad(CogWithData):
             content: str = message.content
             channel = message.channel
             for word in content.split(" "):
-                if word.endswith("er") and 15 <= randrange(0, 200) <= 20:
+                if word.endswith("er") and random() < self.funny_chance:
+                    if word == "her" and random() >= self.funny_chance:
+                        continue
                     await channel.send("\"{}\"? I hardly even know her!".format(word))
                     return
 
@@ -66,6 +71,7 @@ class Dad(CogWithData):
                 else:
                     name = content[nameStart:]
                 await channel.send("Hi" + name + "! I'm {}!".format(self.bot.user.name))
+
 
 
 def setup(bot):

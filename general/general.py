@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from datetime import datetime
 from io import BytesIO
 from math import ceil
@@ -14,15 +15,30 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 
+from bot import StatiCat
+from checks import check_permissions
+
 
 class UnavailablePokemonError(ValueError):
     pass
 
 
+class DateTimeConverter(commands.Converter):
+    async def convert(self, ctx: commands.Context, argument: str) -> datetime:
+        just_date = re.compile("^\d{2}/\d{2}/\d{2}$")
+        date_and_time = re.compile("^\d{2}/\d{2}/\d{2} \d{2}:\d{2}:\d{2}$")
+
+        if re.match(just_date, argument):
+            argument += ' 00:00:00'
+        if re.match(date_and_time, argument):
+            return datetime.strptime(argument, '%m/%d/%y %H:%M:%S')
+        raise commands.BadArgument("Date must be in the re_format: \"mm/dd/yy\" or \"mm/dd/yy hh:mm:ss\"")
+
+
 class General(commands.Cog):
     """General commands for general needs."""
 
-    def __init__(self, bot):
+    def __init__(self, bot: StatiCat):
         self.bot = bot
         self.directory = "general/"
 

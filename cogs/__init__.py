@@ -1,7 +1,6 @@
-from discord.ext.commands import Bot
-
+from bot import StatiCat
 from cogs.cogs import Cogs
 
 
-def setup(bot: Bot):
+def setup(bot: StatiCat):
     bot.add_cog(Cogs(bot))

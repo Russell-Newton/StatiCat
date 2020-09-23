@@ -1,7 +1,6 @@
-import discord.ext.commands as commands
-
+from bot import StatiCat
 from deepfake.deepfake import DeepFake
 
 
-def setup(bot: commands.Bot):
+def setup(bot: StatiCat):
     bot.add_cog(DeepFake(bot))

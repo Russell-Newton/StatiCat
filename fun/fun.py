@@ -6,6 +6,8 @@ import discord.ext.commands as commands
 
 __author__ = "ScarletRav3n"
 
+from bot import StatiCat
+
 b = False
 nsword = nlove = nsquat = npizza = nbribe = ndad = ncalc = nbutt = ncom = nflirt = nup = 0
 
@@ -13,7 +15,7 @@ nsword = nlove = nsquat = npizza = nbribe = ndad = ncalc = nbutt = ncom = nflirt
 class Fun(commands.Cog):
     """fun random commands"""
 
-    def __init__(self, bot):
+    def __init__(self, bot: StatiCat):
         self.bot = bot
 
     @commands.command()

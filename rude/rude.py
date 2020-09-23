@@ -4,12 +4,13 @@ from typing import Union
 import discord
 import discord.ext.commands as commands
 
+from bot import StatiCat
 from checks import check_permissions
 from cogwithdata import CogWithData
 
 
 class Rude(CogWithData):
-    def __init__(self, bot: commands.Bot):
+    def __init__(self, bot: StatiCat):
         self.bot = bot
         self.directory = "rude/"
         super().__init__(self.directory + "targets.json")
