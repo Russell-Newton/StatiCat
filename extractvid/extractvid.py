@@ -1,13 +1,12 @@
-from typing import AnyStr
+import re
+import io
+import aiohttp
+import discord
 
 import discord.ext.commands as commands
-import discord
 from bs4 import BeautifulSoup
-import requests
-import re
-from selenium import webdriver
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-from webdriver_manager.chrome import ChromeDriverManager
+from msedge.selenium_tools import Edge, EdgeOptions
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
 
 from bot import StatiCat
 
@@ -18,12 +17,14 @@ class ExtractVid(commands.Cog):
         self.directory = "extractvid/"
         self.ifunny_pattern = re.compile("^https://ifunny.co/fun/..+$")
 
-    @commands.group(name="extractvid", aliases=["getvid"], pass_context=True)
-    async def extract_video(self, ctx):
-        """Extract a video from a link to a social media post. Use `<prefix>help extractvid` for implementations."""
-        pass
+    @commands.command(name="getvid")
+    async def get_video(self, ctx: commands.Context, link: str):
+        """Extract a video from a link to a social media post."""
+        if ExtractVid._validate_link_format(link, self.ifunny_pattern):
+            return await self.extract_from_ifunny(ctx, link)
 
-    @extract_video.command(name="ifunny", aliases=["if"])
+        await ctx.send("That link isn't valid.")
+
     async def extract_from_ifunny(self, ctx: commands.Context, link: str):
         """
         Using a link to an iFunny video, output the raw video file.
@@ -32,16 +33,24 @@ class ExtractVid(commands.Cog):
             await ctx.send("That link isn't valid.")
             return
 
-        capabilities = DesiredCapabilities.CHROME
-        capabilities['goog:loggingPrefs'] = {'performance': 'ALL'}
-        options = webdriver.ChromeOptions()
-        options.add_argument("--headless")
-        browser = webdriver.Chrome(ChromeDriverManager().install(), desired_capabilities=capabilities, chrome_options=options)
+        options = EdgeOptions()
+        options.use_chromium = True
+        options.add_argument("headless")
+        options.add_argument("disable-gpu")
+        browser = Edge(options=options)
 
         browser.get(link)
         soup = BeautifulSoup(browser.page_source, "lxml")
-        find = soup.find("div", {"class": "media__content"})
-        await ctx.send(find.prettify())
+        browser.close()
+        src = soup.find("div", {"class": "media__content"}).find("video")['src']
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(src) as resp:
+                if resp.status != 200:
+                    return await ctx.send("Could not get video...")
+                data = io.BytesIO(await resp.read())
+                await ctx.send(file=discord.File(data, 'extracted_vid.mp4'))
+
 
     @staticmethod
     def _validate_link_format(link: str, re_format: re.Pattern) -> bool:

@@ -1,6 +1,7 @@
 import asyncio
 import functools
 import io
+import logging
 
 import aiohttp
 import discord
@@ -32,11 +33,13 @@ class Bigmoji(BaseCog):
         self.session = aiohttp.ClientSession()
         if svg_convert == 'cairo':
             print('Using CairoSVG for svg conversion.')
+            logging.info('Using CairoSVG for svg conversion.')
         elif svg_convert == 'wand':
             print('Using wand for svg conversion.')
+            logging.info('Using wand for svg conversion.')
         else:
-            print('Failed to import svg converter. Standard emoji '
-                  'will be limited to 72x72 png.')
+            print('Failed to import svg converter. Standard emoji will be limited to 72x72 png.')
+            logging.info('Failed to import svg converter. Standard emoji will be limited to 72x72 png.')
 
     def __unload(self):
         self.bot.loop.create_task(self.session.close())

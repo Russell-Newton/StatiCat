@@ -3,6 +3,7 @@ import os
 import re
 from datetime import datetime
 from io import BytesIO
+import aiohttp
 from math import ceil
 from random import choice
 from typing import Union, List, Optional
@@ -12,8 +13,9 @@ import discord.ext.commands as commands
 import requests
 from PIL import Image, ImageDraw
 from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.common.exceptions import WebDriverException
+from webdriver_manager.microsoft import EdgeChromiumDriverManager
+from msedge.selenium_tools import Edge, EdgeOptions
 
 from bot import StatiCat
 from checks import check_permissions
@@ -78,6 +80,8 @@ class General(commands.Cog):
             "You may rely on it."
         ]
 
+        self.scraping_output = self.directory + "scraping.csv"
+
     @commands.command()
     async def ping(self, ctx: commands.Context):
         await ctx.send("Pong!")
@@ -98,17 +102,21 @@ class General(commands.Cog):
         if pokemon_lower not in self.pokemon_list:
             raise UnavailablePokemonError
 
-        capabilities = DesiredCapabilities.CHROME
-        capabilities['goog:loggingPrefs'] = {'performance': 'ALL'}
-        options = webdriver.ChromeOptions()
-        options.add_argument("--headless")
-        browser = webdriver.Chrome(desired_capabilities=capabilities, chrome_options=options)
-        browser.get(self.pokepalette_url + pokemon_lower)
+        options = EdgeOptions()
+        options.use_chromium = True
+        options.add_argument("headless")
+        options.add_argument("disable-gpu")
+        browser = Edge(options=options)
 
-        soup = BeautifulSoup(browser.page_source, features="html.parser")
-        network_response_log = browser.get_log('performance')
-        sprite = self.get_pokemon_sprite(pokemon)
+        try:
+            browser.get(self.pokepalette_url + pokemon_lower)
+        except WebDriverException:
+            await ctx.send("The pokepalette website isn't up :(...")
+            return
+
+        soup = BeautifulSoup(browser.page_source, features="lxml")
         browser.close()
+        sprite = await self.get_pokemon_sprite(pokemon)
 
         background_color = self.convert_style_to_color(soup.find("div", id="app")["style"])
         color_bar_entries = soup.findAll("div", class_="bar")
@@ -119,7 +127,7 @@ class General(commands.Cog):
             except KeyError:
                 continue
 
-        palette = self.create_palette(sprite, colors)
+        palette = await self.create_palette(sprite, colors)
 
         temp_loc = self.directory + str(datetime.now().microsecond)
         palette.save(temp_loc + ".png")
@@ -142,12 +150,13 @@ class General(commands.Cog):
         rgb = bg_color.split("rgb(")[1][:-1].split(",")
         return discord.Color.from_rgb(int(rgb[0]), int(rgb[1]), int(rgb[2]))
 
-    def get_pokemon_sprite(self, pokemon: str) -> Image:
-        r = requests.get(self.pokepalette_sprite_url + "{}.png".format(self.pokemon_list.index(pokemon) + 1))
-        img = Image.open(BytesIO(r.content))
-        return img
+    async def get_pokemon_sprite(self, pokemon: str) -> Image:
+        async with aiohttp.ClientSession() as session:
+            async with session.get(self.pokepalette_sprite_url + "{}.png".format(self.pokemon_list.index(pokemon) + 1)) as r:
+                img = Image.open(BytesIO(await r.read()))
+                return img
 
-    def create_palette(self, sprite: Image, colors: List[discord.Color]) -> Image:
+    async def create_palette(self, sprite: Image, colors: List[discord.Color]) -> Image:
         rows = ceil(len(colors) / self.swatch_max_width)
         cols = self.swatch_max_width if rows > 1 else len(colors)
         height = 2 * self.sprite_padding + sprite.size[1] + \
@@ -195,3 +204,43 @@ class General(commands.Cog):
     async def roll(self, ctx, sides: Optional[int] = 6):
         """Roll a dice. Default 6 sides"""
         await ctx.send("It's {}!".format(choice(range(sides))))
+
+    @check_permissions(['manage_messages', 'read_message_history'])
+    @commands.command(name="collecthistory", aliases=["history"])
+    async def package_message_history(self, ctx: commands.Context, start: DateTimeConverter, end: DateTimeConverter,
+                                      limit: Optional[int] = None):
+        """
+        Compiles the messages from this channel from a start date to an end date.
+        Dates must be specified in one of the following formats: "mm/dd/yy" or "mm/dd/yy hh:mm:ss"
+        If no time is specified, 00:00:00 is chosen. Dates should be surrounded in quotation marks if they include a time.
+
+        Sends a csv file to the invoker when done. The csv file is not saved on the host computer and can only be
+        accessed by the command invoker. The invoker takes full responsibility for the data collected.
+        """
+        channel: discord.TextChannel = ctx.channel
+
+        try:
+            await ctx.send("This may take a while.")
+            messages: List[discord.Message] = await channel.history(limit=limit, before=end, after=start).flatten()
+        except discord.Forbidden:
+            await ctx.send("I don't have permission to perform this operation.")
+            return
+        except discord.HTTPException:
+            await ctx.send("I had some trouble performing this operation.")
+            return
+
+        if os.path.exists(self.scraping_output):
+            os.remove(self.scraping_output)
+
+        with open(self.scraping_output, 'w') as output:
+            for message in messages:
+                author: discord.User = message.author
+                if message.content != "" and not author.bot:
+                    output.write(f"{str(message.clean_content)},\n")
+
+        if os.path.exists(self.scraping_output):
+            author: discord.User = ctx.author
+            await author.send("Viola!", file=discord.File(self.scraping_output))
+            os.remove(self.scraping_output)
+        else:
+            await ctx.send("I had some trouble compiling the messages into a file")

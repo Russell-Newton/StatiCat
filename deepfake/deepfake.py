@@ -1,3 +1,4 @@
+import logging
 import os
 import subprocess
 import traceback
@@ -70,6 +71,7 @@ class DeepFake(commands.Cog):
             except discord.HTTPException as error:
                 await ctx.send("Unable to use attached content.")
                 traceback.print_exception(type(error), error, error.__traceback__)
+                logging.exception("Unable to use attached content.")
                 return
         else:
             await ctx.send("You must make the input video an attachment.")
@@ -100,6 +102,7 @@ class DeepFake(commands.Cog):
             except discord.HTTPException as error:
                 await ctx.send("Unable to use attached content.")
                 traceback.print_exception(type(error), error, error.__traceback__)
+                logging.exception("Unable to use attached content.")
                 return
         else:
             await ctx.send("You must make the input image an attachment.")

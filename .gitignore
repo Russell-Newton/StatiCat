@@ -73,5 +73,13 @@ fabric.properties
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
+
 deepfake/vox-cpk.pth.tar
 deepfake/vox-adv-cpk.pth.tar
+deepfake/bm_output.mp4
+dad/imdadblacklist.json
+.idea/StatiCat.iml
+customlistener/listeners.json
+rude/targets.json
+
+_logs/

@@ -2,7 +2,9 @@ import asyncio
 import itertools
 import json
 import logging
+import argparse
 import traceback
+from datetime import datetime
 from importlib import import_module
 from importlib.machinery import ModuleSpec
 from typing import Union, List
@@ -11,8 +13,6 @@ import discord
 import discord.ext.commands as commands
 
 from checks import NoPermissionError
-
-logging.basicConfig(level=logging.ERROR)
 
 
 def get_data() -> dict:
@@ -224,14 +224,18 @@ class StatiCat(commands.Bot):
 
     async def load_cogs(self):
         print("Loading cogs...")
+        logging.info("Loading cogs...")
         _cogs = get_data()["loaded cogs"]
         for cog in _cogs:
             try:
                 await self._load_cog_silent(cog)
                 print("Loaded {}!".format(cog))
+                logging.info(f"Loaded {cog}!")
             except Exception as error:
                 traceback.print_exception(type(error), error, error.__traceback__)
+                logging.exception("Failed to load a cog.")
         print("Done!\n")
+        logging.info("Done!\n")
 
     async def _load_cog_silent(self, cog_name):
         """
@@ -246,12 +250,14 @@ class StatiCat(commands.Bot):
         except ImportError as e:
             if e.name.lower() == cog_name.lower():
                 print("No cog of the name '{}' was found.".format(cog_name))
+                logging.warning(f"No cog of the name '{cog_name}' was found.")
             return
 
         lib = mod.loader.load_module()
         if not hasattr(lib, "setup"):
             del lib
             print("Cog '{}' doesn't have a setup function.".format(cog_name))
+            logging.warning(f"Cog '{cog_name}' doesn't have a setup function.")
             return
 
         try:
@@ -260,10 +266,12 @@ class StatiCat(commands.Bot):
             else:
                 lib.setup(self)
         except Exception as e:
+            logging.exception("Caught an exception while running a cog setup script.")
             print(str(e))
 
     async def on_ready(self):
         print('Logged in as {0.user}'.format(self))
+        logging.info(f"Logged in as {self.user}")
 
         await self.load_cogs()
         self.help_command = EmbeddingHelpCommand(**{"title": "{} Help Menu".format(self.user.name)})
@@ -273,6 +281,7 @@ class StatiCat(commands.Bot):
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.CheckFailure):
             traceback.print_exception(type(error), error, error.__traceback__)
+            logging.exception("Caught a command checks error.")
             return
         if isinstance(error, NoPermissionError):
             await ctx.send("You don't have permission to use that")
@@ -286,11 +295,30 @@ class StatiCat(commands.Bot):
             await ctx.send("Try `{0.prefix}help <command_name>` for usage information!".format(ctx))
         elif not isinstance(error, commands.CommandNotFound):
             traceback.print_exception(type(error), error, error.__traceback__)
+            logging.exception("Caught a command error.")
             await ctx.send(
                 "Oops! You just caused an error ({} caused by {})! Try `{}help <command_name>` for usage information!".format(
                     error.__class__.__name__, error.__cause__.__class__.__name__, ctx.prefix))
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(description="Optional bot parameters.")
+    parser.add_argument('-l', '--loglevel',
+                        dest='loglevel',
+                        type=str,
+                        default="INFO",
+                        help="The logging level for the bot (default: INFO)")
+
+    args = parser.parse_args()
+
+    numeric_level = getattr(logging, args.loglevel.upper(), None)
+    if not isinstance(numeric_level, int):
+        raise ValueError('Invalid log level: %s' % args.loglevel)
+
+    logging.basicConfig(filename=f'_logs/{datetime.now().strftime("%m-%d-%Y %H_%M_%S.log")}',
+                        level=args.loglevel,
+                        format='%(levelname)s::%(asctime)s::%(message)s',
+                        datefmt='%m/%d/%Y %H:%M:%S')
+
     bot = StatiCat()
-    bot.run('TOKEN')
+    bot.run('NzAyMjA1NzQ2NDkzOTE1MjU4.Xp8qEA.9KmX94kyGcCejQG7hGWFymJtbW0')

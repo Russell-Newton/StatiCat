@@ -2,6 +2,7 @@ import asyncio
 import importlib
 import itertools
 import json
+import logging
 import sys
 from importlib import import_module
 from importlib.machinery import ModuleSpec
@@ -19,80 +20,87 @@ class Cogs(commands.Cog):
         """
         self.bot: commands.Bot = bot
         self.embedinator = Embedinator(**{"title": "**Cogs**"})
+        self.suppress_confirmation = False
 
     @commands.is_owner()
     @commands.command()
-    async def load(self, ctx: commands.Context, cog_name: str, suppress_end_message: bool = False):
+    async def load(self, ctx: commands.Context, *cog_names):
         """
         Loads a cog.
 
         Usage: load <cog_name>
         """
-        if self.bot.get_cog(cog_name) is not None:
-            await ctx.send("Cog is already loaded! Try `{}reload {}` instead.".format(ctx.prefix, cog_name))
-            return
-        try:
-            mod: ModuleSpec = import_module(cog_name.lower()).__spec__
-            self._cleanup_and_refresh_modules(mod.name)
-        except ImportError as e:
-            # if e.name.lower() == cog_name.lower():
-            #     await ctx.send("No cog of the name '{}' was found.".format(cog_name))
-            traceback.print_exception(type(e), e, e.__traceback__)
-            await ctx.send(str(e))
-            return
+        for cog_name in cog_names:
+            if self.bot.get_cog(cog_name) is not None:
+                await ctx.send(f"Cog {cog_name} is already loaded! Try `{ctx.prefix}reload {cog_name}` instead.")
+                return
+            try:
+                mod: ModuleSpec = import_module(cog_name.lower()).__spec__
+                self._cleanup_and_refresh_modules(mod.name)
+            except ImportError as e:
+                # if e.name.lower() == cog_name.lower():
+                #     await ctx.send("No cog of the name '{}' was found.".format(cog_name))
+                traceback.print_exception(type(e), e, e.__traceback__)
+                logging.exception("Error loading cog.")
+                await ctx.send(str(e))
+                return
 
-        lib = mod.loader.load_module()
-        if not hasattr(lib, "setup"):
-            del lib
-            await ctx.send("Cog '{}' doesn't have a setup function.".format(cog_name))
-            return
+            lib = mod.loader.load_module()
+            if not hasattr(lib, "setup"):
+                del lib
+                await ctx.send(f"Cog '{cog_name}' doesn't have a setup function.")
+                return
 
-        try:
-            if asyncio.iscoroutinefunction(lib.setup):
-                await lib.setup(self.bot)
-            else:
-                lib.setup(self.bot)
+            try:
+                if asyncio.iscoroutinefunction(lib.setup):
+                    await lib.setup(self.bot)
+                else:
+                    lib.setup(self.bot)
 
-            self.add_cog_to_data(cog_name)
+                self.add_cog_to_data(cog_name)
 
-            if not suppress_end_message:
-                await ctx.send("Loaded {}!".format(cog_name))
-        except Exception as e:
-            traceback.print_exception(type(e), e, e.__traceback__)
-            await ctx.send(str(e))
+                if not self.suppress_confirmation:
+                    await ctx.send("Loaded {}!".format(cog_name))
+            except Exception as e:
+                traceback.print_exception(type(e), e, e.__traceback__)
+                logging.exception("Error loading cog.")
+                await ctx.send(str(e))
 
     @commands.is_owner()
     @commands.command()
-    async def unload(self, ctx: commands.Context, cog_name: str, suppress_end_message: bool = False):
+    async def unload(self, ctx: commands.Context, *cog_names):
         """
         Unloads a cog.
 
         Usage: unload <cog_name>
         """
-        if self.bot.get_cog(cog_name) is None:
-            await ctx.send("There isn't a loaded cog named '{}'.".format(cog_name))
-            return
-        self.bot.remove_cog(cog_name)
-        self.remove_cog_from_data(cog_name)
+        for cog_name in cog_names:
+            if self.bot.get_cog(cog_name) is None:
+                await ctx.send(f"There isn't a loaded cog named '{cog_name}'.")
+                return
+            self.bot.remove_cog(cog_name)
+            self.remove_cog_from_data(cog_name)
 
-        if not suppress_end_message:
-            await ctx.send("Unloaded {}!".format(cog_name))
+            if not self.suppress_confirmation:
+                await ctx.send("Unloaded {}!".format(cog_name))
 
     @commands.is_owner()
     @commands.command()
-    async def reload(self, ctx: commands.Context, cog_name: str, suppress_end_message: bool = False):
+    async def reload(self, ctx: commands.Context, *cog_names):
         """
         Reloads a cog.
 
         Usage: reload <cog_name>
         """
-        if self.bot.get_cog(cog_name) is None:
-            await ctx.send("There isn't a loaded cog named '{}'.".format(cog_name))
-            return
-        await self.unload(ctx, cog_name, True)
-        await self.load(ctx, cog_name, True)
+        for cog_name in cog_names:
+            if self.bot.get_cog(cog_name) is None:
+                await ctx.send(f"There isn't a loaded cog named '{cog_name}'.")
+                return
+            self.suppress_confirmation = True
+            await self.unload(ctx, cog_name)
+            await self.load(ctx, cog_name)
+            self.suppress_confirmation = False
 
-        if not suppress_end_message:
             await ctx.send("Reloaded {}!".format(cog_name))
 
     @commands.is_owner()
