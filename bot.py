@@ -321,4 +321,4 @@ if __name__ == '__main__':
                         datefmt='%m/%d/%Y %H:%M:%S')
 
     bot = StatiCat()
-    bot.run('NzAyMjA1NzQ2NDkzOTE1MjU4.Xp8qEA.9KmX94kyGcCejQG7hGWFymJtbW0')
+    bot.run('<enter token>')
