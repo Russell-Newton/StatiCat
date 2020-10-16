@@ -1,7 +1,7 @@
 # StatiCat
 #### A Discord bot built in Python 3.7
 
-I'll make better documentation later, when I make the bot easier to set up. Until then, make a bot linked to your discord account, get the API key, and stick it into bot.py :)
+I'll make better documentation later, when I make the bot easier to set up. Until then, make a bot linked to your discord account, get the API key, and stick it into `bot.py` :)
 
 ## I have used code from the following repositories to make certain cogs. Thank you to:
 * https://github.com/Cog-Creators/Red-DiscordBot
