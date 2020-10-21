@@ -3,6 +3,8 @@ from typing import List
 import discord
 import discord.ext.commands as commands
 
+from bot import get_private_data
+
 
 class NoPermissionError(commands.CheckFailure):
     pass
@@ -55,5 +57,16 @@ def check_in_private():
 
     async def predicate(ctx: commands.Context):
         return ctx.guild is None
+
+    return commands.check(predicate)
+
+
+def is_owner():
+    """
+    Check if the command is called by the Owner.
+    """
+
+    async def predicate(ctx: commands.Context):
+        return ctx.author.id == get_private_data()["Owner ID"]
 
     return commands.check(predicate)

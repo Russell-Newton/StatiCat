@@ -1,8 +1,8 @@
+import argparse
 import asyncio
 import itertools
 import json
 import logging
-import argparse
 import traceback
 from datetime import datetime
 from importlib import import_module
@@ -15,18 +15,23 @@ import discord.ext.commands as commands
 from checks import NoPermissionError
 
 
-def get_data() -> dict:
+def get_global_data() -> dict:
     with open("global_data.json", 'r') as file:
         return json.load(file)
 
 
 def get_prefixes(bot: commands.Bot, message: discord.Message) -> Union[str, List[str]]:
-    prefixes = get_data()["prefixes"]
+    prefixes = get_global_data()["prefixes"]
     return prefixes
 
 
+def get_private_data() -> dict:
+    with open("private_data.json", 'r') as file:
+        return json.load(file)
+
+
 def get_color_palette() -> List[discord.Color]:
-    hexes = get_data()["color palette"]
+    hexes = get_global_data()["color palette"]
     return [discord.Color(int(hex_val, 0)) for hex_val in hexes]
 
 
@@ -225,7 +230,7 @@ class StatiCat(commands.Bot):
     async def load_cogs(self):
         print("Loading cogs...")
         logging.info("Loading cogs...")
-        _cogs = get_data()["loaded cogs"]
+        _cogs = get_global_data()["loaded cogs"]
         for cog in _cogs:
             try:
                 await self._load_cog_silent(cog)
@@ -281,10 +286,12 @@ class StatiCat(commands.Bot):
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.CheckFailure):
             traceback.print_exception(type(error), error, error.__traceback__)
-            logging.exception("Caught a command checks error.")
+            logging.error("Caught a command checks error.", exc_info=(type(error), error, error.__traceback__))
             return
         if isinstance(error, NoPermissionError):
             await ctx.send("You don't have permission to use that")
+            logging.error("Someone tried to use a command that they didn't have permission for.",
+                          exc_info=(type(error), error, error.__traceback__))
             return
         elif isinstance(error, commands.MissingRequiredArgument):
             await ctx.send(
@@ -295,7 +302,7 @@ class StatiCat(commands.Bot):
             await ctx.send("Try `{0.prefix}help <command_name>` for usage information!".format(ctx))
         elif not isinstance(error, commands.CommandNotFound):
             traceback.print_exception(type(error), error, error.__traceback__)
-            logging.exception("Caught a command error.")
+            logging.error("Caught a command error.", exc_info=(type(error), error, error.__traceback__))
             await ctx.send(
                 "Oops! You just caused an error ({} caused by {})! Try `{}help <command_name>` for usage information!".format(
                     error.__class__.__name__, error.__cause__.__class__.__name__, ctx.prefix))
@@ -321,4 +328,4 @@ if __name__ == '__main__':
                         datefmt='%m/%d/%Y %H:%M:%S')
 
     bot = StatiCat()
-    bot.run('<enter token>')
+    bot.run(get_private_data()["Token"])
