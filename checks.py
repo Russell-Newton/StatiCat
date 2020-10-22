@@ -59,14 +59,3 @@ def check_in_private():
         return ctx.guild is None
 
     return commands.check(predicate)
-
-
-def is_owner():
-    """
-    Check if the command is called by the Owner.
-    """
-
-    async def predicate(ctx: commands.Context):
-        return ctx.author.id == get_owner_data()["Owner ID"]
-
-    return commands.check(predicate)
