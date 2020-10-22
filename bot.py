@@ -13,26 +13,7 @@ import discord
 import discord.ext.commands as commands
 
 from checks import NoPermissionError
-
-
-def get_global_data() -> dict:
-    with open("global_data.json", 'r') as file:
-        return json.load(file)
-
-
-def get_prefixes(bot: commands.Bot, message: discord.Message) -> Union[str, List[str]]:
-    prefixes = get_global_data()["prefixes"]
-    return prefixes
-
-
-def get_private_data() -> dict:
-    with open("private_data.json", 'r') as file:
-        return json.load(file)
-
-
-def get_color_palette() -> List[discord.Color]:
-    hexes = get_global_data()["color palette"]
-    return [discord.Color(int(hex_val, 0)) for hex_val in hexes]
+from universals import get_prefixes, get_owner_data, get_global_data, get_color_palette
 
 
 class Embedinator(commands.Paginator):
@@ -328,4 +309,4 @@ if __name__ == '__main__':
                         datefmt='%m/%d/%Y %H:%M:%S')
 
     bot = StatiCat()
-    bot.run(get_private_data()["Token"])
+    bot.run(get_owner_data()["Token"])

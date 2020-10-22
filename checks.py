@@ -3,7 +3,7 @@ from typing import List
 import discord
 import discord.ext.commands as commands
 
-from bot import get_private_data
+from universals import get_owner_data
 
 
 class NoPermissionError(commands.CheckFailure):
@@ -67,6 +67,6 @@ def is_owner():
     """
 
     async def predicate(ctx: commands.Context):
-        return ctx.author.id == get_private_data()["Owner ID"]
+        return ctx.author.id == get_owner_data()["Owner ID"]
 
     return commands.check(predicate)
