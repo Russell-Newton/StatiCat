@@ -1,1 +1,1 @@
-activate discordbot & python bot.py
+activate discordbot & python bot.py --messageowner

@@ -8,12 +8,21 @@ from datetime import datetime
 from importlib import import_module
 from importlib.machinery import ModuleSpec
 from typing import Union, List
+import os
+import sys
+import logging
 
 import discord
 import discord.ext.commands as commands
 
 from checks import NoPermissionError
 from universals import get_prefixes, get_owner_data, get_global_data, get_color_palette
+
+
+def restart_after_shutdown():
+    logging.warning("Shutdown complete. Attempting to restart...")
+    python = sys.executable
+    os.execl(python, python, *sys.argv+["--messageowner"])
 
 
 class Embedinator(commands.Paginator):
@@ -189,6 +198,10 @@ class StatiCat(commands.Bot):
     def __init__(self):
         super().__init__(command_prefix=get_prefixes)
 
+        # This should never be set to true without shutting down the bot
+        self.should_restart = False
+        self.send_startup_message_to_owner = False
+
     @staticmethod
     def print_invite_link():
         # perms: discord.Permissions = discord.Permissions(change_nickname=True,
@@ -264,6 +277,12 @@ class StatiCat(commands.Bot):
         self.print_invite_link()
         await self.change_presence(activity=discord.Game(name="Type s!help for help!"))
 
+        # Initialize owner_id
+        await self.is_owner(self.user)
+
+        if self.send_startup_message_to_owner:
+            await self.message_owner("Up and running!")
+
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.CheckFailure):
             traceback.print_exception(type(error), error, error.__traceback__)
@@ -288,6 +307,9 @@ class StatiCat(commands.Bot):
                 "Oops! You just caused an error ({} caused by {})! Try `{}help <command_name>` for usage information!".format(
                     error.__class__.__name__, error.__cause__.__class__.__name__, ctx.prefix))
 
+    async def message_owner(self, message: str):
+        await self.get_user(self.owner_id).send(message)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Optional bot parameters.")
@@ -296,6 +318,9 @@ if __name__ == '__main__':
                         type=str,
                         default="INFO",
                         help="The logging level for the bot (default: INFO)")
+    parser.add_argument('--messageowner',
+                        dest='messageowner',
+                        action='store_true')
 
     args = parser.parse_args()
 
@@ -309,4 +334,11 @@ if __name__ == '__main__':
                         datefmt='%m/%d/%Y %H:%M:%S')
 
     bot = StatiCat()
+
+    if args.messageowner:
+        bot.send_startup_message_to_owner = True
+
     bot.run(get_owner_data()["Token"])
+    bot.close()
+    if bot.should_restart:
+        restart_after_shutdown()
