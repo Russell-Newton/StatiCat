@@ -1,16 +1,14 @@
 import argparse
 import asyncio
 import itertools
-import json
 import logging
+import os
+import sys
 import traceback
 from datetime import datetime
 from importlib import import_module
 from importlib.machinery import ModuleSpec
-from typing import Union, List
-import os
-import sys
-import logging
+from typing import List
 
 import discord
 import discord.ext.commands as commands
@@ -22,7 +20,7 @@ from universals import get_prefixes, get_owner_data, get_global_data, get_color_
 def restart_after_shutdown():
     logging.warning("Shutdown complete. Attempting to restart...")
     python = sys.executable
-    os.execl(python, python, *sys.argv+["--messageowner"])
+    os.execl(python, python, *sys.argv + ["--messageowner"])
 
 
 class Embedinator(commands.Paginator):

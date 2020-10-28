@@ -49,9 +49,9 @@ class Dad(CogWithData):
 
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
+        content: str = message.content
+        channel = message.channel
         if message.author.id != self.bot.user.id:
-            content: str = message.content
-            channel = message.channel
             for word in content.split(" "):
                 if word.endswith("er") and random() < self.funny_chance:
                     if word == "her" and random() >= self.funny_chance:
@@ -59,18 +59,18 @@ class Dad(CogWithData):
                     await channel.send("\"{}\"? I hardly even know her!".format(word))
                     return
 
-            if message.guild is not None:
-                if message.guild.id in self.data["blacklist"]:
-                   return
-            if content.lower().startswith("i'm ") or content.lower().startswith(
-                    'im ') or content.lower().startswith('i am '):
-                nameStart = content.find('m') + 1
-                nameEnd = content.find('.')
-                if nameEnd > 0:
-                    name = content[nameStart:nameEnd]
-                else:
-                    name = content[nameStart:]
-                await channel.send("Hi" + name + "! I'm {}!".format(self.bot.user.name))
+        if message.guild is not None:
+            if message.guild.id in self.data["blacklist"]:
+               return
+        if content.lower().startswith("i'm ") or content.lower().startswith(
+                'im ') or content.lower().startswith('i am '):
+            nameStart = content.find('m') + 1
+            nameEnd = content.find('.')
+            if nameEnd > 0:
+                name = content[nameStart:nameEnd]
+            else:
+                name = content[nameStart:]
+            await channel.send("Hi" + name + "! I'm {}!".format(self.bot.user.name))
 
 
 

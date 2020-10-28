@@ -13,3 +13,9 @@ I'll make better documentation later, when I make the bot easier to set up. Unti
     * Make sure you download vox-cpk.pth.tar and vox-adv-cpk.pth.tar and put them in deepfake/!
         * https://mega.nz/file/4cAyTIpT#5c5n43cLo4xc_uSgyBMIxMLB1S3_tNtzeiEZALnIyyc
         * https://mega.nz/file/MNJw3ASA#ykp34kcenxKAEoTAW6__UhSrkxdchzqBq2p6qSzCkLE
+
+
+#### A pinnacle of comedy
+![Power]("_photos/TruePower.jpg")
+
+![Comedy]("_photos/Comedy.png")
