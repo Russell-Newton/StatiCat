@@ -193,8 +193,8 @@ class EmbeddingHelpCommand(commands.HelpCommand):
 
 
 class StatiCat(commands.Bot):
-    def __init__(self):
-        super().__init__(command_prefix=get_prefixes)
+    def __init__(self, **options):
+        super().__init__(command_prefix=get_prefixes, **options)
 
         # This should never be set to true without shutting down the bot
         self.should_restart = False
@@ -267,7 +267,7 @@ class StatiCat(commands.Bot):
             print(str(e))
 
     async def on_ready(self):
-        print('Logged in as {0.user}'.format(self))
+        print(f'Logged in as {self.user}')
         logging.info(f"Logged in as {self.user}")
 
         await self.load_cogs()
@@ -280,6 +280,7 @@ class StatiCat(commands.Bot):
 
         if self.send_startup_message_to_owner:
             await self.message_owner("Up and running!")
+
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.CheckFailure):
@@ -331,12 +332,15 @@ if __name__ == '__main__':
                         format='%(levelname)s::%(asctime)s::%(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S')
 
-    bot = StatiCat()
+    intents: discord.Intents = discord.Intents.default()
+
+    bot = StatiCat(intents=intents)
 
     if args.messageowner:
         bot.send_startup_message_to_owner = True
 
+    logging.info(sys.argv)
+
     bot.run(get_owner_data()["Token"])
-    bot.close()
     if bot.should_restart:
         restart_after_shutdown()

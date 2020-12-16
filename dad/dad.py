@@ -1,3 +1,6 @@
+import logging
+from typing import Union
+
 import discord
 import discord.ext.commands as commands
 import requests
@@ -56,7 +59,7 @@ class Dad(CogWithData):
                 if word.endswith("er") and random() < self.funny_chance:
                     if word == "her" and random() >= self.funny_chance:
                         continue
-                    await channel.send("\"{}\"? I hardly even know her!".format(word))
+                    await channel.send(f"\"{word}\"? I hardly even know her!")
                     return
 
         if message.guild is not None:
@@ -70,7 +73,15 @@ class Dad(CogWithData):
                 name = content[nameStart:nameEnd]
             else:
                 name = content[nameStart:]
-            await channel.send("Hi" + name + "! I'm {}!".format(self.bot.user.name))
+            await channel.send("Hi" + name + f"! I'm {self.bot.user.name}!")
+
+    @commands.Cog.listener("on_reaction_add")
+    async def remove_funny_dad_message(self, reaction: discord.Reaction, user: Union[discord.Member, discord.User]):
+        message: discord.Message = reaction.message
+        if user.id != self.bot.user.id and message.content.startswith("Hi") and message.content.endswith(f"! I'm {self.bot.user.name}!"):
+            # logging.info(f"Grabbed reacted message: {message.content}, with emoji: {str(reaction.emoji)}")
+            if reaction.emoji == "\u274c":
+                await reaction.message.delete()
 
 
 
