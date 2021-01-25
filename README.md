@@ -1,9 +1,14 @@
 # StatiCat
+
 #### A Discord bot built in Python 3.7
 
-I'll make better documentation later, when I make the bot easier to set up. Until then, make a bot linked to your discord account, get the API key, and stick it into `bot.py` :)
+Documentation will come later.
 
-## I have used code from the following repositories to make certain cogs. Thank you to:
+## Thanks to the following APIs:
+* [15.ai](https://15.ai)
+
+## I have referenced code from the following repositories to make certain cogs. Thank you to:
+
 * https://github.com/Cog-Creators/Red-DiscordBot
     * Used for the Cog reloading functionality in Cog "Cogs"
 * https://github.com/asdvek/DeepFryBot
@@ -14,8 +19,8 @@ I'll make better documentation later, when I make the bot easier to set up. Unti
         * https://mega.nz/file/4cAyTIpT#5c5n43cLo4xc_uSgyBMIxMLB1S3_tNtzeiEZALnIyyc
         * https://mega.nz/file/MNJw3ASA#ykp34kcenxKAEoTAW6__UhSrkxdchzqBq2p6qSzCkLE
 
-
 #### A pinnacle of comedy
+
 ![Power]("_photos/TruePower.jpg")
 
 ![Comedy]("_photos/Comedy.png")
