@@ -74,7 +74,3 @@ class Say(commands.Cog):
         resetPFP = requests.get(resetPFPLink).content
         await self.bot.edit_profile(avatar = resetPFP)
     """
-
-
-def setup(bot):
-    bot.add_cog(Say(bot))

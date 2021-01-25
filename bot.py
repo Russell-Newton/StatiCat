@@ -279,8 +279,8 @@ class StatiCat(commands.Bot):
         await self.is_owner(self.user)
 
         if self.send_startup_message_to_owner:
-            await self.message_owner("Up and running!")
-
+            send_message_task = asyncio.create_task(self.message_owner("Up and running!"))
+            await send_message_task
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.CheckFailure):

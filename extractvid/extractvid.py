@@ -7,6 +7,7 @@ import discord.ext.commands as commands
 from bs4 import BeautifulSoup
 from msedge.selenium_tools import Edge, EdgeOptions
 from webdriver_manager.microsoft import EdgeChromiumDriverManager
+from datetime import datetime
 
 from bot import StatiCat
 
@@ -49,7 +50,7 @@ class ExtractVid(commands.Cog):
                 if resp.status != 200:
                     return await ctx.send("Could not get video...")
                 data = io.BytesIO(await resp.read())
-                await ctx.send(file=discord.File(data, 'extracted_vid.mp4'))
+                await ctx.send(file=discord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4'))
 
 
     @staticmethod

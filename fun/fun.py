@@ -4,8 +4,6 @@ from random import randint, choice
 import discord
 import discord.ext.commands as commands
 
-__author__ = "ScarletRav3n"
-
 from bot import StatiCat
 
 b = False
@@ -157,8 +155,3 @@ class Fun(commands.Cog):
         else:
             k = ""
         await ctx.send("What's updog?" + k)
-
-
-def setup(bot):
-    n = Fun(bot)
-    bot.add_cog(n)

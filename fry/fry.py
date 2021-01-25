@@ -282,7 +282,3 @@ class Fry(commands.Cog):
         x_avg /= len(points)
         y_avg /= len(points)
         return x_avg, y_avg
-
-
-def setup(bot):
-    bot.add_cog(Fry(bot))

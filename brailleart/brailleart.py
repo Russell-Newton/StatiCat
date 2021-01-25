@@ -87,8 +87,3 @@ class BrailleArt(commands.Cog):
             return_array.append("\n".join(array[i: i + line_count]))
             i += line_count
         return return_array
-
-
-def setup(bot):
-    cog = BrailleArt(bot)
-    bot.add_cog(cog)

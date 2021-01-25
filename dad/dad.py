@@ -82,10 +82,3 @@ class Dad(CogWithData):
             # logging.info(f"Grabbed reacted message: {message.content}, with emoji: {str(reaction.emoji)}")
             if reaction.emoji == "\u274c":
                 await reaction.message.delete()
-
-
-
-def setup(bot):
-    n = Dad(bot)
-    # bot.add_listener(n.listener, "on_message")
-    bot.add_cog(n)

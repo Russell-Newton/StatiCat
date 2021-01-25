@@ -51,5 +51,13 @@ class Owner(commands.Cog):
             await self.bot.close()
             self.bot.loop.stop()
 
+    @commands.is_owner()
+    @commands.command(name="attribute", aliases=["getattr", "attr"])
+    async def send_attr(self, ctx: commands.Context, attribute: str):
+        """
+        Sends the bot's attribute specified by the passed parameter.
+        """
+        await ctx.send(getattr(self.bot, attribute))
+
     def approval_check(self, reaction: discord.Reaction, user: discord.User):
         return user.id == self.bot.owner_id and str(reaction.emoji) == '👍'

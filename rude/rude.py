@@ -19,13 +19,15 @@ class Rude(CogWithData):
     @commands.group(name="mimic", pass_context=True)
     async def _mimic(self, ctx):
         """Manage the mimicking status"""
-        pass
+        if ctx.invoked_subcommand is None:
+            await ctx.send("You have to invoke a subcommand.")
 
     @check_permissions(['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members'], False)
     @commands.group(pass_context=True)
     async def silence(self, ctx):
         """Manage the silencing status"""
-        pass
+        if ctx.invoked_subcommand is None:
+            await ctx.send("You have to invoke a subcommand.")
 
     @_mimic.command(name="add", pass_context=True)
     async def mimic_add(self, ctx, target: Union[discord.Member, discord.User]):
@@ -64,6 +66,20 @@ class Rude(CogWithData):
         self.update_data_file()
 
         await ctx.send("{0.mention} <3".format(target))
+
+    # @silence.command(name="server", pass_context=True)
+    # async def silence_all_server(self, ctx: commands.Context):
+    #     """Silence an entire server"""
+    #     guild: discord.Guild = ctx.guild
+    #     members: List[discord.Member] = guild.members
+    #     logging.info(guild._members)
+    #     for member in members:
+    #         logging.info(member.id)
+    #         if not member.bot:
+    #             self.data["silence"].append(member.id)
+    #     self.update_data_file()
+    #
+    #     await ctx.send("You will regret this...")
 
     @silence.command(name="remove", pass_context=True)
     async def silence_remove(self, ctx, target: Union[discord.Member, discord.User]):
