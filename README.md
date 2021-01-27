@@ -21,6 +21,6 @@ Documentation will come later.
 
 #### A pinnacle of comedy
 
-![Power]("_photos/TruePower.jpg")
+![Power](_photos/TruePower.jpg)
 
-![Comedy]("_photos/Comedy.png")
+![Comedy](_photos/Comedy.png)
