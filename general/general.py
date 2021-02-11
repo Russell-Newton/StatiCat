@@ -13,8 +13,7 @@ import discord.ext.commands as commands
 import requests
 from PIL import Image, ImageDraw
 from bs4 import BeautifulSoup
-from selenium.common.exceptions import WebDriverException
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
+from selenium.common.exceptions import WebDriverException, SessionNotCreatedException
 from msedge.selenium_tools import Edge, EdgeOptions
 
 from bot import StatiCat
@@ -100,13 +99,19 @@ class General(commands.Cog):
             pokemon = self.pokemon_list[pokemon - 1]
         pokemon_lower = pokemon.lower()
         if pokemon_lower not in self.pokemon_list:
-            raise UnavailablePokemonError
+            await ctx.send("Only pokemon from Gen I to Gen V please :).")
+            return
 
         options = EdgeOptions()
         options.use_chromium = True
         options.add_argument("headless")
         options.add_argument("disable-gpu")
-        browser = Edge(options=options)
+        try:
+            browser = Edge(options=options)
+        except SessionNotCreatedException as e:
+            await ctx.send("Something is out of date with this command. I'm sending a message to the owner about this. Thank you for your patience :)")
+            await self.bot.message_owner(f"Ayo update the msedgedriver!\n{type(e)}\t{str(e)}\n{str(e.__traceback__)}")
+            return
 
         try:
             browser.get(self.pokepalette_url + pokemon_lower)
@@ -116,7 +121,7 @@ class General(commands.Cog):
 
         soup = BeautifulSoup(browser.page_source, features="lxml")
         browser.close()
-        sprite = await self.get_pokemon_sprite(pokemon)
+        sprite = await self.get_pokemon_sprite(pokemon_lower)
 
         background_color = self.convert_style_to_color(soup.find("div", id="app")["style"])
         color_bar_entries = soup.findAll("div", class_="bar")
@@ -133,11 +138,6 @@ class General(commands.Cog):
         palette.save(temp_loc + ".png")
         await ctx.send(file=discord.File(temp_loc + ".png"))
         os.remove(temp_loc + ".png")
-
-    @pokepalette.error
-    async def pokepalette_error(self, ctx, error):
-        if isinstance(error.__cause__, UnavailablePokemonError) or isinstance(error.__cause__, IndexError):
-            await ctx.send("Only pokemon from Gen I to Gen V please :).")
 
     def get_pokemon_list(self) -> List[str]:
         with open(self.directory + "pokemon.json") as file:

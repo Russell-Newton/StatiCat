@@ -59,3 +59,17 @@ def check_in_private():
         return ctx.guild is None
 
     return commands.check(predicate)
+
+
+def is_owner_or_whitelist():
+    """
+    Check if the command is called by the owner or by someone in the owner_data whitelist
+    :return:
+    """
+
+    async def predicate(ctx: commands.Context):
+        if await ctx.bot.is_owner(ctx.author) or ctx.author.id in get_owner_data()["special command whitelist"]:
+            return True
+        return False
+
+    return commands.check(predicate)

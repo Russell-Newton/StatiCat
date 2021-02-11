@@ -9,6 +9,7 @@ from datetime import datetime
 from importlib import import_module
 from importlib.machinery import ModuleSpec
 from typing import List
+from random import choice
 
 import discord
 import discord.ext.commands as commands
@@ -305,6 +306,13 @@ class StatiCat(commands.Bot):
             await ctx.send(
                 "Oops! You just caused an error ({} caused by {})! Try `{}help <command_name>` for usage information!".format(
                     error.__class__.__name__, error.__cause__.__class__.__name__, ctx.prefix))
+
+    async def invoke(self, ctx: commands.Context):
+        if ctx.command is not None:
+            if get_global_data()["deny odds"] != 0 and choice(range(get_global_data()["deny odds"])) == 0:
+                await ctx.send(choice(get_global_data()["deny choices"]))
+                return
+        return await super().invoke(ctx)
 
     async def message_owner(self, message: str):
         await self.get_user(self.owner_id).send(message)

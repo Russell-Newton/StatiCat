@@ -6,7 +6,7 @@ import discord
 import discord.ext.commands as commands
 from bs4 import BeautifulSoup
 from msedge.selenium_tools import Edge, EdgeOptions
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
+from selenium.common.exceptions import SessionNotCreatedException
 from datetime import datetime
 
 from bot import StatiCat
@@ -38,7 +38,13 @@ class ExtractVid(commands.Cog):
         options.use_chromium = True
         options.add_argument("headless")
         options.add_argument("disable-gpu")
-        browser = Edge(options=options)
+        try:
+            browser = Edge(options=options)
+        except SessionNotCreatedException as e:
+            await ctx.send(
+                "Something is out of date with this command. I'm sending a message to the owner about this. Thank you for your patience :)")
+            await self.bot.message_owner(f"Ayo update the msedgedriver!\n{type(e)}\t{str(e)}\n{str(e.__traceback__)}")
+            return
 
         browser.get(link)
         soup = BeautifulSoup(browser.page_source, "lxml")
@@ -51,7 +57,6 @@ class ExtractVid(commands.Cog):
                     return await ctx.send("Could not get video...")
                 data = io.BytesIO(await resp.read())
                 await ctx.send(file=discord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4'))
-
 
     @staticmethod
     def _validate_link_format(link: str, re_format: re.Pattern) -> bool:
