@@ -17,5 +17,23 @@
     "0xffffff",
     "0xe64a52",
     "0x943952"
+  ],
+  "deny odds": 35,
+  "deny choices": [
+    "Not right now.",
+    "No wanna.",
+    "Not feelin it, chief.",
+    "How about no.",
+    "Try again later when I'm feeling nicer.",
+    "For you? No.",
+    "What if I told you I simply don't have it in me at the moment?",
+    "I simply do not want to.",
+    "I'm not doing that! In this political climate?!",
+    "Try again.",
+    "Nope.",
+    "Nuh uh.",
+    "Not gonna do it.",
+    "You'd like for me to do that, wouldn't you?",
+    "I don't think I will."
   ]
 }
