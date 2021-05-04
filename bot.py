@@ -249,7 +249,7 @@ class StatiCat(commands.Bot):
             if e.name.lower() == cog_name.lower():
                 print("No cog of the name '{}' was found.".format(cog_name))
                 logging.warning(f"No cog of the name '{cog_name}' was found.")
-            return
+            raise e
 
         lib = mod.loader.load_module()
         if not hasattr(lib, "setup"):
@@ -266,6 +266,7 @@ class StatiCat(commands.Bot):
         except Exception as e:
             logging.exception("Caught an exception while running a cog setup script.")
             print(str(e))
+            raise e
 
     async def on_ready(self):
         print(f'Logged in as {self.user}')

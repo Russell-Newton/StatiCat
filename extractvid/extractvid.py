@@ -16,7 +16,7 @@ class ExtractVid(commands.Cog):
     def __init__(self, bot: StatiCat):
         self.bot = bot
         self.directory = "extractvid/"
-        self.ifunny_pattern = re.compile("^https://ifunny.co/fun/..+$")
+        self.ifunny_pattern = re.compile("^https://ifunny.co/video/..+$")
 
     @commands.command(name="getvid")
     async def get_video(self, ctx: commands.Context, link: str):

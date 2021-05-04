@@ -2,6 +2,11 @@
 
 #### A Discord bot built in Python 3.7
 
+To install/update requirements into an Anaconda environment:
+```shell
+pip install -r requirements\dev.txt
+```
+
 Documentation will come later.
 
 ## Thanks to the following APIs:

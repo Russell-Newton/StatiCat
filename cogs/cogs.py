@@ -11,6 +11,7 @@ import traceback
 import discord.ext.commands as commands
 
 from bot import Embedinator, StatiCat
+from universals import get_global_data, save_global_data
 
 
 class Cogs(commands.Cog):
@@ -138,20 +139,13 @@ class Cogs(commands.Cog):
 
     @staticmethod
     def remove_cog_from_data(cog_name):
-        with open("global_data.json", 'r') as file:
-            data = json.load(file)
-        with open("global_data.json", 'w') as file:
-            data["loaded cogs"].remove(cog_name)
-            json.dump(data, file)
+        get_global_data()["loaded cogs"].remove(cog_name)
+        save_global_data()
 
     @staticmethod
     def add_cog_to_data(cog_name):
-        with open("global_data.json", 'r') as file:
-            data = json.load(file)
-        with open("global_data.json", 'w') as file:
-            data["loaded cogs"].append(cog_name)
-            data["loaded cogs"] = sorted(data["loaded cogs"])
-            json.dump(data, file)
+        get_global_data()["loaded cogs"].append(cog_name)
+        save_global_data()
 
     @staticmethod
     def _cleanup_and_refresh_modules(module_name: str) -> None:

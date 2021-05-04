@@ -9,7 +9,6 @@ import discord
 import discord.ext.commands as commands
 import dlib
 import numpy as np
-import progressbar
 from PIL import Image
 from imutils import face_utils
 
@@ -37,14 +36,15 @@ class Fry(commands.Cog):
 
         Will not include a buldge by default"""
         image = Image
-        if len(ctx.message.attachments) is 0:
+        if len(ctx.message.attachments) == 0:
             await ctx.send("You have to attach an image.")
         try:
             for attachment in ctx.message.attachments:
                 temp_loc = self.directory + str(datetime.now().microsecond)
                 url = attachment.url
-                async with aiohttp.ClientSession().get(url) as r:
-                    imageData = await r.content.read()
+                async with aiohttp.ClientSession() as client:
+                    async with client.get(url) as r:
+                        imageData = await r.content.read()
                 with open(temp_loc, 'wb') as f:
                     f.write(imageData)
                     image = Image.open(temp_loc).convert('RGB')
@@ -213,8 +213,7 @@ class Fry(commands.Cog):
 
         # array for holding bulged image
         bulged = np.copy(img_data)
-        bar = progressbar.ProgressBar()
-        for y in bar(range(y_min, y_max)):
+        for y in range(y_min, y_max):
             for x in range(x_min, x_max):
                 ray = np.array([x, y])
 
