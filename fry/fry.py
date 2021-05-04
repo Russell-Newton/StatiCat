@@ -42,9 +42,10 @@ class Fry(commands.Cog):
             for attachment in ctx.message.attachments:
                 temp_loc = self.directory + str(datetime.now().microsecond)
                 url = attachment.url
-                async with aiohttp.ClientSession() as client:
-                    async with client.get(url) as r:
-                        imageData = await r.content.read()
+                client = aiohttp.ClientSession()
+                async with client.get(url) as r:
+                    imageData = await r.content.read()
+                await client.close()
                 with open(temp_loc, 'wb') as f:
                     f.write(imageData)
                     image = Image.open(temp_loc).convert('RGB')
