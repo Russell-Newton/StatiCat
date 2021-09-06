@@ -109,7 +109,8 @@ class General(commands.Cog):
         try:
             browser = Edge(options=options)
         except SessionNotCreatedException as e:
-            await ctx.send("Something is out of date with this command. I'm sending a message to the owner about this. Thank you for your patience :)")
+            await ctx.send(
+                "Something is out of date with this command. I'm sending a message to the owner about this. Thank you for your patience :)")
             await self.bot.message_owner(f"Ayo update the msedgedriver!\n{type(e)}\t{str(e)}\n{str(e.__traceback__)}")
             return
 
@@ -152,7 +153,8 @@ class General(commands.Cog):
 
     async def get_pokemon_sprite(self, pokemon: str) -> Image:
         async with aiohttp.ClientSession() as session:
-            async with session.get(self.pokepalette_sprite_url + "{}.png".format(self.pokemon_list.index(pokemon) + 1)) as r:
+            async with session.get(
+                    self.pokepalette_sprite_url + "{}.png".format(self.pokemon_list.index(pokemon) + 1)) as r:
                 img = Image.open(BytesIO(await r.read()))
                 return img
 

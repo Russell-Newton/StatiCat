@@ -137,6 +137,6 @@ class CustomListener(CogWithData):
                     for name, info in self.data[str(message.guild.id)].items():
                         if message.channel.id == info["channel"] and self.check_message(info["method"], info["keyword"],
                                                                                         message):
-                            await message.channel.send(info["reaction"])
+                            await message.reply(info["reaction"])
                         elif info["channel"] is False and self.check_message(info["method"], info["keyword"], message):
-                            await message.channel.send(info["reaction"])
+                            await message.reply(info["reaction"])

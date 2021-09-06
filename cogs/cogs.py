@@ -21,11 +21,10 @@ class Cogs(commands.Cog):
         """
         self.bot: commands.Bot = bot
         self.embedinator = Embedinator(**{"title": "**Cogs**"})
-        self.suppress_confirmation = False
 
     @commands.is_owner()
     @commands.command()
-    async def load(self, ctx: commands.Context, *cog_names) -> bool:
+    async def load(self, ctx: commands.Context, *cog_names, reloading=False) -> bool:
         """
         Loads a cog.
 
@@ -63,7 +62,7 @@ class Cogs(commands.Cog):
 
                 self.add_cog_to_data(cog_name)
 
-                if not self.suppress_confirmation:
+                if not reloading:
                     await ctx.send(f"Loaded {cog_name}!")
                     logging.warning(f"Loaded {cog_name}!")
 
@@ -76,7 +75,7 @@ class Cogs(commands.Cog):
 
     @commands.is_owner()
     @commands.command()
-    async def unload(self, ctx: commands.Context, *cog_names):
+    async def unload(self, ctx: commands.Context, *cog_names, reloading=False):
         """
         Unloads a cog.
 
@@ -91,9 +90,10 @@ class Cogs(commands.Cog):
             self.bot.remove_cog(cog_name)
             self.remove_cog_from_data(cog_name)
 
-            if not self.suppress_confirmation:
+            if not reloading:
                 await ctx.send(f"Unloaded {cog_name}!")
                 logging.warning(f"Unloaded {cog_name}!")
+
             return True
 
     @commands.is_owner()
@@ -106,10 +106,8 @@ class Cogs(commands.Cog):
         """
         for cog_name in cog_names:
             logging.warning(f"Attempting to reload {cog_name}...")
-            self.suppress_confirmation = True
-            unload = await self.unload(ctx, cog_name)
-            load = await self.load(ctx, cog_name)
-            self.suppress_confirmation = False
+            unload = await self.unload(ctx, cog_name, reloading=True)
+            load = await self.load(ctx, cog_name, reloading=True)
 
             if unload:
                 if load:

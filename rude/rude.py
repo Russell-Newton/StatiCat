@@ -105,7 +105,7 @@ class Rude(CogWithData):
             "What's so hard to understand about \"shut up\"?",
             lambda: "{0.mention}, get your boy. {1.mention}'s all up in my face, bro".format(
                 self.get_random_guild_member(input_message),
-                input_message.author) if input_message.guild is not None else "You're all up in my face, bro."
+                input_message.author) if input_message.guilds is not None else "You're all up in my face, bro."
         ]
         chosen = choice(choices)
         if callable(chosen):
@@ -114,7 +114,7 @@ class Rude(CogWithData):
 
     @staticmethod
     def get_random_guild_member(input_message) -> discord.Member:
-        guild: discord.Guild = input_message.guild
+        guild: discord.Guild = input_message.guilds
         chosen: discord.Member = choice(guild.members)
         while chosen.id is input_message.author.id:
             chosen = choice(guild.members)

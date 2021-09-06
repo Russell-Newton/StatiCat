@@ -21,3 +21,4 @@ imutils
 scikit-image
 pyyaml
 tqdm
+fake-useragent
