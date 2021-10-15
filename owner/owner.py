@@ -36,8 +36,8 @@ class Owner(commands.Cog):
     async def throw_error(self, ctx: commands.Context):
         raise TestException("This is a test.")
 
-    @commands.is_owner()
-    @commands.command(name="shutdown")
+    # @commands.is_owner()
+    # @commands.command(name="shutdown")
     async def shutdown_no_restart(self, ctx: commands.Context):
         await ctx.send('Are you sure? React with 👍 to confirm.')
 
@@ -51,8 +51,8 @@ class Owner(commands.Cog):
             await self.bot.close()
             self.bot.loop.stop()
 
-    @commands.is_owner()
-    @commands.command(name="restart")
+    # @commands.is_owner()
+    # @commands.command(name="restart")
     async def shutdown_restart(self, ctx: commands.Context):
         await ctx.send('Are you sure? React with 👍 to confirm.')
 

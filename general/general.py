@@ -10,7 +10,6 @@ from typing import Union, List, Optional
 
 import discord
 import discord.ext.commands as commands
-import requests
 from PIL import Image, ImageDraw
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import WebDriverException, SessionNotCreatedException
@@ -18,6 +17,7 @@ from msedge.selenium_tools import Edge, EdgeOptions
 
 from bot import StatiCat
 from checks import check_permissions
+from cogwithdata import CogWithData
 
 
 class UnavailablePokemonError(ValueError):
@@ -36,12 +36,12 @@ class DateTimeConverter(commands.Converter):
         raise commands.BadArgument("Date must be in the re_format: \"mm/dd/yy\" or \"mm/dd/yy hh:mm:ss\"")
 
 
-class General(commands.Cog):
+class General(CogWithData):
     """General commands for general needs."""
 
     def __init__(self, bot: StatiCat):
         self.bot = bot
-        self.directory = "general/"
+        super().__init__()
 
         # pokepalette stuff
         self.pokepalette_url = "http://pokepalettes.com/#"

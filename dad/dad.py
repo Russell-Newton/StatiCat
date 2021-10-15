@@ -15,7 +15,7 @@ class Dad(CogWithData):
 
     def __init__(self, bot: StatiCat):
         self.bot = bot
-        super().__init__("dad/imdadblacklist.json")
+        super().__init__("imdadblacklist")
         self.funny_chance = 0.02
 
     @commands.command()

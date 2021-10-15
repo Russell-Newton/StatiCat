@@ -13,8 +13,7 @@ import aiohttp
 class FifteenAI(CogWithData):
     def __init__(self, bot: StatiCat):
         self.bot = bot
-        self.directory = "fifteenai/"
-        super().__init__(self.directory + "fifteenai.json")
+        super().__init__("fifteenai")
 
         self.headers = {
             'authority': 'api.15.ai',

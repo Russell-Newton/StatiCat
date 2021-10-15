@@ -12,8 +12,7 @@ from cogwithdata import CogWithData
 class Rude(CogWithData):
     def __init__(self, bot: StatiCat):
         self.bot = bot
-        self.directory = "rude/"
-        super().__init__(self.directory + "targets.json")
+        super().__init__("targets")
 
     @check_permissions(['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members'], False)
     @commands.group(name="mimic", pass_context=True)

@@ -12,8 +12,7 @@ from cogwithdata import CogWithData
 class CustomListener(CogWithData):
     def __init__(self, bot: StatiCat):
         self.bot = bot
-        self.directory = "customlistener/"
-        super().__init__(self.directory + "listeners.json")
+        super().__init__("listeners")
         self.embedinator = Embedinator(**{"title": "Custom Listeners**"})
         self.method_options = ["anywhere", "start", "end"]
 

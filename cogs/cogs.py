@@ -1,7 +1,6 @@
 import asyncio
 import importlib
 import itertools
-import json
 import logging
 import sys
 from importlib import import_module
@@ -87,12 +86,37 @@ class Cogs(commands.Cog):
                 await ctx.send(f"There isn't a loaded cog named '{cog_name}'.")
                 logging.error(f"There isn't a loaded cog named '{cog_name}'.")
                 return False
-            self.bot.remove_cog(cog_name)
-            self.remove_cog_from_data(cog_name)
 
-            if not reloading:
-                await ctx.send(f"Unloaded {cog_name}!")
-                logging.warning(f"Unloaded {cog_name}!")
+            try:
+                mod: ModuleSpec = import_module(cog_name.lower()).__spec__
+                self._cleanup_and_refresh_modules(mod.name)
+            except ImportError as e:
+                # if e.name.lower() == cog_name.lower():
+                #     await ctx.send("No cog of the name '{}' was found.".format(cog_name))
+                traceback.print_exception(type(e), e, e.__traceback__)
+                logging.exception("Error loading cog.")
+                await ctx.send(str(e))
+                return False
+
+            try:
+                lib = mod.loader.load_module()
+                if hasattr(lib, "teardown"):
+                        if asyncio.iscoroutinefunction(lib.teardown):
+                            await lib.teardown(self.bot)
+                        else:
+                            lib.teardown(self.bot)
+
+                self.bot.remove_cog(cog_name)
+                self.remove_cog_from_data(cog_name)
+
+                if not reloading:
+                    await ctx.send(f"Unloaded {cog_name}!")
+                    logging.warning(f"Unloaded {cog_name}!")
+
+            except Exception as e:
+                traceback.print_exception(type(e), e, e.__traceback__)
+                logging.exception("Error unloading cog.")
+                await ctx.send(str(e))
 
             return True
 

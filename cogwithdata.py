@@ -1,4 +1,5 @@
 import json
+import inspect
 
 import discord.ext.commands as commands
 
@@ -8,11 +9,13 @@ class CogWithData(commands.Cog):
     A Cog that has data management with json files.
     """
 
-    def __init__(self, data_file_location):
+    def __init__(self, data_file_name: str = "data"):
         """
-        :param data_file_location: the path to the file that stores the data.
+        :param data_file_name: the optional name to give to the datafile
         """
-        self.data_file_location = data_file_location
+        py_file_location = inspect.getfile(self.__class__)
+        directory, _ = py_file_location.rsplit("\\", 1)
+        self.data_file_location = directory + f"\\{data_file_name}.json"
         self.data: dict = self._get_data()
 
     def _get_data(self) -> dict:

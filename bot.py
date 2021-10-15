@@ -232,6 +232,7 @@ class StatiCat(commands.Bot):
             except Exception as error:
                 traceback.print_exception(type(error), error, error.__traceback__)
                 logging.exception("Failed to load a cog.")
+
         print("Done!\n")
         logging.info("Done!\n")
 

@@ -14,8 +14,7 @@ class WikiRun(CogWithData):
 
     def __init__(self, bot: StatiCat):
         self.bot = bot
-        self.directory = "wikirun/"
-        super().__init__(self.directory + "stats.json")
+        super().__init__("stats")
 
     @commands.group(name="wikirun", aliases=['wrun'], pass_context=True)
     async def runs(self, ctx):
