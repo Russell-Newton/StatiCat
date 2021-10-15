@@ -141,7 +141,7 @@ class General(CogWithData):
         os.remove(temp_loc + ".png")
 
     def get_pokemon_list(self) -> List[str]:
-        with open(self.directory + "pokemon.json") as file:
+        with open(self.directory + "\\pokemon.json") as file:
             lines = json.load(file)
             return [line.lower() for line in lines]
 
