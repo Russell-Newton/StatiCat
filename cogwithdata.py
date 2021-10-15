@@ -14,8 +14,8 @@ class CogWithData(commands.Cog):
         :param data_file_name: the optional name to give to the datafile
         """
         py_file_location = inspect.getfile(self.__class__)
-        directory, _ = py_file_location.rsplit("\\", 1)
-        self.data_file_location = directory + f"\\{data_file_name}.json"
+        self.directory, _ = py_file_location.rsplit("\\", 1)
+        self.data_file_location = self.directory + f"\\{data_file_name}.json"
         self.data: dict = self._get_data()
 
     def _get_data(self) -> dict:
