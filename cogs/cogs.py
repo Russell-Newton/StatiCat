@@ -89,7 +89,6 @@ class Cogs(commands.Cog):
 
             try:
                 mod: ModuleSpec = import_module(cog_name.lower()).__spec__
-                self._cleanup_and_refresh_modules(mod.name)
             except ImportError as e:
                 # if e.name.lower() == cog_name.lower():
                 #     await ctx.send("No cog of the name '{}' was found.".format(cog_name))
