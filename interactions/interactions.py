@@ -30,8 +30,8 @@ def compare_online_with_offline_commands(online: dict, offline: dict) -> bool:
     same_type = online["type"] == offline["type"]
     same_name = online["name"] == offline["name"]
     same_description = online.get("description", "") == offline.get("description", "")
-    same_options = online.get("options", None) == offline.get("options", None)
-    same_default_permission = online.get("default_permission") == offline.get("default_permission")
+    same_options = online.get("options", []) == offline.get("options", [])
+    same_default_permission = online.get("default_permission", True) == offline.get("default_permission", True)
 
     return same_type and same_name and same_description and same_options and same_default_permission
 
@@ -47,10 +47,10 @@ class ApplicationCommand(abc.ABC):
         self.bot: Optional[StatiCat] = None
         self.callback = callback
         self.cog = None
-        self.subcommands: dict[str, ApplicationCommand] = dict()
         self.application_command_type: int = self.__class__._registry[self.__class__.__name__]
         self.default_permission: bool = kwargs.get("default_permission", True)
         self.command_name: str = kwargs.get("name") or callback.__name__
+        self.parent: Optional[ApplicationCommand] = None
 
         # Instances are saved as
         # guild_id/None: {"data": json_data, "deploy_url": deploy_url}
@@ -159,6 +159,7 @@ class SlashCommand(ApplicationCommand, _type=1):
 
     def __init__(self, callback, guild: Union[int, list[int]] = None, **kwargs):
         super().__init__(callback, guild, **kwargs)
+        self.subcommands: list[ApplicationCommand] = list()
 
         command_description = kwargs.get("help")
         if command_description is not None:
@@ -282,10 +283,10 @@ class Interactions(CogWithData):
         # Identify global commands that need syncing
         upstream = await self.get_deployed_global_commands()
         for command in upstream:
-            if command["name"] not in self.commands.keys():
+            if (command["name"], command["type"]) not in self.commands.keys():
                 await self.bot.http.delete_global_command(self.bot.user.id, command['id'])
                 logging.info(f"Deleted stale command:\n{command}")
-            elif compare_online_with_offline_commands(command, self.commands[(command["name"], command["type"])].instances.get(None, None)):
+            elif compare_online_with_offline_commands(command, self.commands[(command["name"], command["type"])].instances.get(None, None)["command_edit_data"]):
                 intersection.append(command["name"])
 
         # Identify guild commands that need syncing
@@ -293,10 +294,10 @@ class Interactions(CogWithData):
             guild_id = guild.id
             upstream = await self.get_deployed_guild_commands(guild_id)
             for command in upstream:
-                if command["name"] not in self.commands.keys():
+                if (command["name"], command["type"]) not in self.commands.keys():
                     await self.bot.http.delete_guild_command(self.bot.user.id, guild_id,command['id'])
                     logging.info(f"Deleted stale command:\n{command}")
-                elif compare_online_with_offline_commands(command, self.commands[(command["name"], command["type"])].instances.get(None, None)):
+                elif compare_online_with_offline_commands(command, self.commands[(command["name"], command["type"])].instances.get(guild_id, None)["command_edit_data"]):
                     intersection.append(command["name"])
 
         # Deploy offline commands that should be online

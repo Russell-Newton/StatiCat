@@ -1,4 +1,5 @@
 import json
+import logging
 import random
 import re
 import io
@@ -13,6 +14,9 @@ from bs4 import BeautifulSoup
 from datetime import datetime
 import requests
 from fake_useragent import UserAgent
+from msedge.selenium_tools import Edge, EdgeOptions
+from webdriver_manager.chrome import ChromeDriverManager
+from selenium import webdriver
 
 from bot import StatiCat
 
@@ -39,7 +43,7 @@ class ExtractVid(commands.Cog):
             "tiktok": (re.compile("^https://vm.tiktok.com/[a-zA-Z0-9]+/$"), self.extract_from_tiktok),
             "tiktoklong": (re.compile("^https://www.tiktok.com/@[a-zA-Z0-9_.]+/video/[0-9]+\S*$"), self.extract_from_tiktok_long)
         }
-        self.agent = UserAgent().firefox
+        self.agent = UserAgent().chrome
 
     @staticmethod
     def _validate_link_format(link: str, re_format: re.Pattern) -> bool:
@@ -86,7 +90,7 @@ class ExtractVid(commands.Cog):
             "Accept-Encoding": "gzip, deflate",
             "Connection": "keep-alive",
             "Host": "www.tiktok.com",
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.111 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
         }
         cookies = get_tiktok_cookies()
 
@@ -132,10 +136,17 @@ class ExtractVid(commands.Cog):
         """
         Based on https://github.com/davidteather/TikTok-Api
         """
+        options = webdriver.ChromeOptions()
+        options.add_argument("--headless")
+        options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36")
+        options.add_argument("--disable-gpu")
+        browser = webdriver.Chrome(executable_path=ChromeDriverManager(log_level=0).install(), options=options)
 
-        with requests.get(link, headers={"User-Agent": self.agent}) as r:
-            soup = BeautifulSoup(r.content, "lxml")
-            full_link = soup.find("link", {"rel": "canonical"})["href"]
+        browser.get(link)
+
+        soup = BeautifulSoup(browser.page_source, features="lxml")
+        browser.quit()
+        full_link = soup.find("link", {"rel": "canonical"})["href"]
 
         return await self.extract_from_tiktok_long(full_link)
 

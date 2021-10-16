@@ -165,7 +165,11 @@ class Cogs(commands.Cog):
 
     @staticmethod
     def add_cog_to_data(cog_name):
-        get_global_data()["loaded cogs"].append(cog_name)
+        if cog_name == "Interactions":
+            get_global_data()["loaded cogs"].append(cog_name)
+        else:
+            get_global_data()["loaded cogs"].insert(-1, cog_name)
+
         save_global_data()
 
     @staticmethod
