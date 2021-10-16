@@ -8,13 +8,14 @@ from math import ceil
 from random import choice
 from typing import Union, List, Optional
 
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 from PIL import Image, ImageDraw
 from bs4 import BeautifulSoup
 from selenium.common.exceptions import WebDriverException, SessionNotCreatedException
 from msedge.selenium_tools import Edge, EdgeOptions
 
+import interactions
 from bot import StatiCat
 from checks import check_permissions
 from cogwithdata import CogWithData
@@ -137,7 +138,7 @@ class General(CogWithData):
 
         temp_loc = self.directory + str(datetime.now().microsecond)
         palette.save(temp_loc + ".png")
-        await ctx.send(file=discord.File(temp_loc + ".png"))
+        await ctx.send(file=nextcord.File(temp_loc + ".png"))
         os.remove(temp_loc + ".png")
 
     def get_pokemon_list(self) -> List[str]:
@@ -146,10 +147,10 @@ class General(CogWithData):
             return [line.lower() for line in lines]
 
     @staticmethod
-    def convert_style_to_color(style: str) -> discord.Color:
+    def convert_style_to_color(style: str) -> nextcord.Color:
         bg_color = style.split(";")[0]
         rgb = bg_color.split("rgb(")[1][:-1].split(",")
-        return discord.Color.from_rgb(int(rgb[0]), int(rgb[1]), int(rgb[2]))
+        return nextcord.Color.from_rgb(int(rgb[0]), int(rgb[1]), int(rgb[2]))
 
     async def get_pokemon_sprite(self, pokemon: str) -> Image:
         async with aiohttp.ClientSession() as session:
@@ -158,7 +159,7 @@ class General(CogWithData):
                 img = Image.open(BytesIO(await r.read()))
                 return img
 
-    async def create_palette(self, sprite: Image, colors: List[discord.Color]) -> Image:
+    async def create_palette(self, sprite: Image, colors: List[nextcord.Color]) -> Image:
         rows = ceil(len(colors) / self.swatch_max_width)
         cols = self.swatch_max_width if rows > 1 else len(colors)
         height = 2 * self.sprite_padding + sprite.size[1] + \
@@ -190,7 +191,7 @@ class General(CogWithData):
     @commands.command()
     async def invite(self, ctx):
         """Get a link to invite me to your server!"""
-        await ctx.send('Invite me! {}'.format(discord.utils.oauth_url(client_id='702205746493915258')))
+        await ctx.send('Invite me! {}'.format(nextcord.utils.oauth_url(client_id='702205746493915258')))
 
     @commands.command(name="8ball")
     async def eight_ball(self, ctx):
@@ -209,7 +210,7 @@ class General(CogWithData):
 
     @check_permissions(['manage_messages', 'read_message_history'])
     @commands.command(name="collecthistory", aliases=["history"])
-    async def package_message_history(self, ctx: commands.Context, start: DateTimeConverter, end: DateTimeConverter,
+    async def package_message_history(self, ctx: commands.Context, start: datetime, end: datetime,
                                       limit: Optional[int] = None):
         """
         Compiles the messages from this channel from a start date to an end date.
@@ -219,15 +220,15 @@ class General(CogWithData):
         Sends a csv file to the invoker when done. The csv file is not saved on the host computer and can only be
         accessed by the command invoker. The invoker takes full responsibility for the data collected.
         """
-        channel: discord.TextChannel = ctx.channel
+        channel: nextcord.TextChannel = ctx.channel
 
         try:
             await ctx.send("This may take a while.")
-            messages: List[discord.Message] = await channel.history(limit=limit, before=end, after=start).flatten()
-        except discord.Forbidden:
+            messages: List[nextcord.Message] = await channel.history(limit=limit, before=end, after=start).flatten()
+        except nextcord.Forbidden:
             await ctx.send("I don't have permission to perform this operation.")
             return
-        except discord.HTTPException:
+        except nextcord.HTTPException:
             await ctx.send("I had some trouble performing this operation.")
             return
 
@@ -236,13 +237,13 @@ class General(CogWithData):
 
         with open(self.scraping_output, 'w') as output:
             for message in messages:
-                author: discord.User = message.author
+                author: nextcord.User = message.author
                 if message.content != "" and not author.bot:
                     output.write(f"{str(message.clean_content)},\n")
 
         if os.path.exists(self.scraping_output):
-            author: discord.User = ctx.author
-            await author.send("Viola!", file=discord.File(self.scraping_output))
+            author: nextcord.User = ctx.author
+            await author.send("Viola!", file=nextcord.File(self.scraping_output))
             os.remove(self.scraping_output)
         else:
             await ctx.send("I had some trouble compiling the messages into a file")

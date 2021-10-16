@@ -1,8 +1,8 @@
 import json
 from typing import Union, List, Optional
 
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 
 
 _global_data: Optional[dict] = None
@@ -27,7 +27,7 @@ def get_global_data() -> dict:
     return _global_data
 
 
-def get_prefixes(bot: commands.Bot, message: discord.Message) -> Union[str, List[str]]:
+def get_prefixes(bot: commands.Bot, message: nextcord.Message) -> Union[str, List[str]]:
     prefixes = get_global_data()["prefixes"]
     return prefixes
 
@@ -37,6 +37,6 @@ def get_owner_data() -> dict:
         return json.load(file)
 
 
-def get_color_palette() -> List[discord.Color]:
+def get_color_palette() -> List[nextcord.Color]:
     hexes = get_global_data()["color palette"]
-    return [discord.Color(int(hex_val, 0)) for hex_val in hexes]
+    return [nextcord.Color(int(hex_val, 0)) for hex_val in hexes]

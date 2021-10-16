@@ -1,8 +1,8 @@
 # noinspection PyUnresolvedReferences
 from random import randint, choice
 
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 
 from bot import StatiCat
 
@@ -17,7 +17,7 @@ class Fun(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def sword(self, ctx, *, user: discord.Member):
+    async def sword(self, ctx, *, user: nextcord.Member):
         """Sword Duel!"""
         global nsword
         author = ctx.message.author
@@ -42,7 +42,7 @@ class Fun(commands.Cog):
                            choice([author.mention, user.mention]) + " came out victorious!" + k)
 
     @commands.command()
-    async def love(self, ctx, user: discord.Member):
+    async def love(self, ctx, user: nextcord.Member):
         """Found your one true love?"""
         global nlove
         author = ctx.message.author

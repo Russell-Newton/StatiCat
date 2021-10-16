@@ -1,4 +1,4 @@
-import discord.ext.commands as commands
+import nextcord.ext.commands as commands
 
 from bot import StatiCat
 from general.general import General

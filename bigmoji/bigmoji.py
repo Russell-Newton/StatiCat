@@ -4,8 +4,8 @@ import io
 import logging
 
 import aiohttp
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 import unicodedata
 
 from bot import StatiCat
@@ -96,7 +96,7 @@ class Bigmoji(BaseCog):
         else:
             img = io.BytesIO(img)
 
-        await ctx.send(file=discord.File(img, name))
+        await ctx.send(file=nextcord.File(img, name))
 
     @staticmethod
     def generate(img):

@@ -1,8 +1,8 @@
 from random import choice
 from typing import Union
 
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 
 from bot import StatiCat
 from checks import check_permissions
@@ -29,7 +29,7 @@ class Rude(CogWithData):
             await ctx.send("You have to invoke a subcommand.")
 
     @_mimic.command(name="add", pass_context=True)
-    async def mimic_add(self, ctx, target: Union[discord.Member, discord.User]):
+    async def mimic_add(self, ctx, target: Union[nextcord.Member, nextcord.User]):
         """Add someone to the list of targets"""
         if target.id is self.bot.user.id:
             await ctx.send("I can't mimic myself.")
@@ -40,7 +40,7 @@ class Rude(CogWithData):
         await ctx.send("{0.mention} <3".format(target))
 
     @_mimic.command(name="remove", pass_context=True)
-    async def mimic_remove(self, ctx, target: Union[discord.Member, discord.User]):
+    async def mimic_remove(self, ctx, target: Union[nextcord.Member, nextcord.User]):
         """Remove someone from the list of targets"""
         self.data["mimic"].remove(target.id)
         self.update_data_file()
@@ -56,7 +56,7 @@ class Rude(CogWithData):
         await ctx.send("I'll stop now.")
 
     @silence.command(name="add", pass_context=True)
-    async def silence_add(self, ctx, target: Union[discord.Member, discord.User]):
+    async def silence_add(self, ctx, target: Union[nextcord.Member, nextcord.User]):
         """Add someone to the list of targets"""
         if target.id is self.bot.user.id:
             await ctx.send("I can't silence myself.")
@@ -69,8 +69,8 @@ class Rude(CogWithData):
     # @silence.command(name="server", pass_context=True)
     # async def silence_all_server(self, ctx: commands.Context):
     #     """Silence an entire server"""
-    #     guild: discord.Guild = ctx.guild
-    #     members: List[discord.Member] = guild.members
+    #     guild: nextcord.Guild = ctx.guild
+    #     members: List[nextcord.Member] = guild.members
     #     logging.info(guild._members)
     #     for member in members:
     #         logging.info(member.id)
@@ -81,7 +81,7 @@ class Rude(CogWithData):
     #     await ctx.send("You will regret this...")
 
     @silence.command(name="remove", pass_context=True)
-    async def silence_remove(self, ctx, target: Union[discord.Member, discord.User]):
+    async def silence_remove(self, ctx, target: Union[nextcord.Member, nextcord.User]):
         """Remove someone from the list of targets"""
         self.data["silence"].remove(target.id)
         self.update_data_file()
@@ -112,15 +112,15 @@ class Rude(CogWithData):
         return chosen
 
     @staticmethod
-    def get_random_guild_member(input_message) -> discord.Member:
-        guild: discord.Guild = input_message.guilds
-        chosen: discord.Member = choice(guild.members)
+    def get_random_guild_member(input_message) -> nextcord.Member:
+        guild: nextcord.Guild = input_message.guilds
+        chosen: nextcord.Member = choice(guild.members)
         while chosen.id is input_message.author.id:
             chosen = choice(guild.members)
         return choice(guild.members)
 
     @staticmethod
-    def spongebobify(message: discord.Message):
+    def spongebobify(message: nextcord.Message):
         out = ""
         choices = [lambda x: x.lower(),
                    lambda x: x.upper()]
@@ -129,7 +129,7 @@ class Rude(CogWithData):
         return out
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: nextcord.Message):
         if message.author.id is not self.bot.user.id:
             try:
                 if message.author.id in self.data["mimic"]:
@@ -137,13 +137,13 @@ class Rude(CogWithData):
                 if message.author.id in self.data["silence"]:
                     try:
                         await message.delete()
-                    except discord.Forbidden:
+                    except nextcord.Forbidden:
                         await message.channel.send(self.get_silence_message(message))
             except Exception:
                 pass
 
     @commands.Cog.listener()
-    async def on_typing(self, channel: discord.abc.Messageable, user: Union[discord.User, discord.Member], when):
+    async def on_typing(self, channel: nextcord.abc.Messageable, user: Union[nextcord.User, nextcord.Member], when):
         if user.id is not self.bot.user.id:
             try:
                 if user.id in self.data["silence"]:

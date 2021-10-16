@@ -1,7 +1,7 @@
 from typing import List
 
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 
 from universals import get_owner_data
 
@@ -18,13 +18,13 @@ def check_permissions(permissions: List[str], check_all: bool = True):
     """
 
     # Check for valid flags
-    discord.Permissions(**{
+    nextcord.Permissions(**{
         perm: True
         for perm in permissions
     })
 
     async def predicate(ctx: commands.Context):
-        if not isinstance(ctx.author, discord.Member):
+        if not isinstance(ctx.author, nextcord.Member):
             return False
         for perm in permissions:
             has_permission = getattr(ctx.author.guild_permissions, perm)

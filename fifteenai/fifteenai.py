@@ -1,8 +1,8 @@
 import os
 from datetime import datetime
 
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 from cogwithdata import CogWithData
 from bot import StatiCat, Embedinator
 import logging
@@ -100,7 +100,7 @@ class FifteenAI(CogWithData):
                     else:
                         with open(filepath, 'wb') as file:
                             file.write(await response.content.read())
-                            await ctx.send(f"Got it! {ctx.author.mention}", file=discord.File(filepath))
+                            await ctx.send(f"Got it! {ctx.author.mention}", file=nextcord.File(filepath))
 
                         os.remove(filepath)
                         return

@@ -7,7 +7,7 @@ from importlib import import_module
 from importlib.machinery import ModuleSpec
 import traceback
 
-import discord.ext.commands as commands
+import nextcord.ext.commands as commands
 
 from bot import Embedinator, StatiCat
 from universals import get_global_data, save_global_data

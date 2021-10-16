@@ -11,8 +11,8 @@ from importlib.machinery import ModuleSpec
 from typing import List
 from random import choice
 
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 
 from checks import NoPermissionError
 from universals import get_prefixes, get_owner_data, get_global_data, get_color_palette
@@ -39,12 +39,12 @@ class Embedinator(commands.Paginator):
         :param options: max_size, color, title, and footer can be set on initialization.
         """
         super().__init__(prefix=None, suffix=None, max_size=options.pop('max_size', 2000))
-        self.color = options.pop('color', discord.Color(int(0x7bacf6)))
+        self.color = options.pop('color', nextcord.Color(int(0x7bacf6)))
         self.title = options.pop('title', "**Help Menu**")
         self.footer: str = options.pop('footer', "")
 
     @staticmethod
-    def add_field_fix_empty_strings(embed: discord.Embed, field_title: str, field_content: str):
+    def add_field_fix_empty_strings(embed: nextcord.Embed, field_title: str, field_content: str):
         if field_title == "":
             if field_content != "":
                 embed.add_field(name="\u2800", value=field_content, inline=False)
@@ -54,14 +54,14 @@ class Embedinator(commands.Paginator):
             else:
                 embed.add_field(name=field_title, value=field_content, inline=False)
 
-    def as_embeds(self, thumbnail_url, color: discord.Color = None) -> List[discord.Embed]:
+    def as_embeds(self, thumbnail_url, color: nextcord.Color = None) -> List[nextcord.Embed]:
         embeds = []
         field_title = ""
         if color is None:
             color = self.color
         for page, number in zip(self.pages, range(len(self.pages))):
             field_content = ""
-            embed = discord.Embed(title=self.title,
+            embed = nextcord.Embed(title=self.title,
                                   color=color,
                                   description="*Page {} of {}*".format(str(number + 1), len(self.pages))
                                   ).set_thumbnail(
@@ -203,7 +203,7 @@ class StatiCat(commands.Bot):
 
     @staticmethod
     def print_invite_link():
-        # perms: discord.Permissions = discord.Permissions(change_nickname=True,
+        # perms: nextcord.Permissions = nextcord.Permissions(change_nickname=True,
         #                                                  view_channel=True,
         #                                                  send_messages=True,
         #                                                  send_tts_messages=True,
@@ -215,7 +215,7 @@ class StatiCat(commands.Bot):
         #                                                  connect=True,
         #                                                  speak=True,
         #                                                  use_voice_activation=True)
-        print('Invite me! {}'.format(discord.utils.oauth_url(client_id='702205746493915258'
+        print('Invite me! {}'.format(nextcord.utils.oauth_url(client_id='702205746493915258'
                                                              # , permissions=perms
                                                              )))
         pass
@@ -276,7 +276,7 @@ class StatiCat(commands.Bot):
         await self.load_cogs()
         self.help_command = EmbeddingHelpCommand(**{"title": "{} Help Menu".format(self.user.name)})
         self.print_invite_link()
-        await self.change_presence(activity=discord.Game(name="Type s!help for help!"))
+        await self.change_presence(activity=nextcord.Game(name="Type s!help for help!"))
 
         # Initialize owner_id
         await self.is_owner(self.user)
@@ -342,7 +342,7 @@ if __name__ == '__main__':
                         format='%(levelname)s::%(asctime)s::%(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S')
 
-    intents: discord.Intents = discord.Intents.default()
+    intents: nextcord.Intents = nextcord.Intents.default()
 
     bot = StatiCat(intents=intents)
 

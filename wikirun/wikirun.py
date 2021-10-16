@@ -1,4 +1,4 @@
-import discord.ext.commands as commands
+import nextcord.ext.commands as commands
 import wikipedia
 from requests.utils import requote_uri
 

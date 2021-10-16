@@ -1,8 +1,8 @@
 import logging
 from typing import Union
 
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 import requests
 from lxml import html
 
@@ -52,7 +52,7 @@ class Dad(CogWithData):
         await ctx.send("Time to become funny.")
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: nextcord.Message):
         if message.author.id == self.bot.user.id:
             return
         if message.guild is None:

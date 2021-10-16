@@ -1,8 +1,8 @@
 from typing import Union
 import re
 
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 
 from bot import Embedinator, StatiCat
 from checks import check_permissions, check_in_guild, check_in_private
@@ -118,7 +118,7 @@ class CustomListener(CogWithData):
             await ctx.send(embed=embed)
         self.embedinator.clear()
 
-    def check_message(self, method: str, keyword: str, message: discord.Message):
+    def check_message(self, method: str, keyword: str, message: nextcord.Message):
         pattern_string = r'(?P<key>' + keyword + r')'
         if method == self.method_options[0]:
             pattern = re.compile(pattern_string, re.IGNORECASE)
@@ -129,7 +129,7 @@ class CustomListener(CogWithData):
         return pattern.search(message.content) is not None
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: nextcord.Message):
         if message.author.id != self.bot.user.id:
             if message.guild is not None:
                 if str(message.guild.id) in self.data:

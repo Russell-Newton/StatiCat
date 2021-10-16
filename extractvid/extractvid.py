@@ -6,9 +6,9 @@ import string
 from typing import Dict, Tuple, Pattern, Callable, Optional, Awaitable
 
 import aiohttp
-import discord
+import nextcord
 
-import discord.ext.commands as commands
+import nextcord.ext.commands as commands
 from bs4 import BeautifulSoup
 from datetime import datetime
 import requests
@@ -18,13 +18,13 @@ from bot import StatiCat
 
 
 def get_tiktok_cookies():
-    device_id = "".join(random.choice(string.digits) for num in range(19))
+    device_id = "".join(random.choice(string.digits) for _ in range(19))
     return {
         "tt_webid": device_id,
         "tt_webid_v2": device_id,
         "csrf_session_id": None,
         "tt_csrf_token": "".join(
-            random.choice(string.ascii_uppercase + string.ascii_lowercase) for i in range(16)
+            random.choice(string.ascii_uppercase + string.ascii_lowercase) for _ in range(16)
         ),
     }
 
@@ -36,7 +36,8 @@ class ExtractVid(commands.Cog):
         self.pattern_map: Dict[str, Tuple[Pattern,
                                           Callable[[str], Awaitable[Optional[io.BytesIO]]]]] = {
             "ifunny": (re.compile("^https://ifunny.co/video/..+$"), self.extract_from_ifunny),
-            "tiktok": (re.compile("^https://vm.tiktok.com/[a-zA-Z0-9]+/$"), self.extract_from_tiktok)
+            "tiktok": (re.compile("^https://vm.tiktok.com/[a-zA-Z0-9]+/$"), self.extract_from_tiktok),
+            "tiktoklong": (re.compile("^https://www.tiktok.com/@[a-zA-Z0-9_.]+/video/[0-9]+\S*$"), self.extract_from_tiktok_long)
         }
         self.agent = UserAgent().firefox
 
@@ -53,7 +54,8 @@ class ExtractVid(commands.Cog):
                 if data is None:
                     await ctx.send("Could not get your video :(")
                 else:
-                    await ctx.send(file=discord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4'))
+                    file = nextcord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4')
+                    await ctx.send(file=file)
                 return
 
         await ctx.send("That link isn't valid.")
@@ -76,15 +78,7 @@ class ExtractVid(commands.Cog):
                 except:
                     return None
 
-    async def extract_from_tiktok(self, link: str):
-        """
-        Based on https://github.com/davidteather/TikTok-Api
-        """
-
-        with requests.get(link, headers={"User-Agent": self.agent}) as r:
-            soup = BeautifulSoup(r.content, "lxml")
-            full_link = soup.find("link", {"rel": "canonical"})["href"]
-
+    async def extract_from_tiktok_long(self, full_link: str):
         headers = {
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
             "authority": "www.tiktok.com",
@@ -121,27 +115,50 @@ class ExtractVid(commands.Cog):
             "User-Agent": self.agent
         }
 
-        with requests.get(src, headers=headers, proxies=None, cookies=cookies) as r:
-            try:
-                return io.BytesIO(r.content)
-            except:
-                return None
+        # with requests.get(src, headers=headers, proxies=None, cookies=cookies) as r:
+        #     try:
+        #         return io.BytesIO(r.content)
+        #     except:
+        #         return None
+
+        async with aiohttp.ClientSession(headers=headers, cookies=cookies) as session:
+            async with session.get(src) as resp:
+                try:
+                    return io.BytesIO(await resp.read())
+                except:
+                    return None
+
+    async def extract_from_tiktok(self, link: str):
+        """
+        Based on https://github.com/davidteather/TikTok-Api
+        """
+
+        with requests.get(link, headers={"User-Agent": self.agent}) as r:
+            soup = BeautifulSoup(r.content, "lxml")
+            full_link = soup.find("link", {"rel": "canonical"})["href"]
+
+        return await self.extract_from_tiktok_long(full_link)
 
     @commands.Cog.listener()
-    async def on_message(self, message: discord.Message):
+    async def on_message(self, message: nextcord.Message):
         content: str = message.content
-        channel: discord.TextChannel = message.channel
-        author: discord.User = message.author
+        channel: nextcord.TextChannel = message.channel
+        author: nextcord.User = message.author
 
         for k, v in self.pattern_map.items():
             if ExtractVid._validate_link_format(content, v[0]):
                 data = await v[1](content)
                 if data is not None:
-                    video = discord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4')
-                    await channel.send(
-                        f"Automatically extracted a video for you! Original link from {author.display_name}: <{content}>",
-                        file=video)
+                    video = nextcord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4')
+                    try:
+                        await channel.send(
+                            f"Automatically extracted a video for you! Original link from {author.display_name}: <{content}>",
+                            file=video)
+                    except nextcord.HTTPException as e:
+                        if e.code == 40005:
+                            await channel.send("I'd extract that video for you, but it's too big")
+                            pass
                     try:
                         await message.delete()
-                    except discord.Forbidden:
+                    except nextcord.Forbidden:
                         pass

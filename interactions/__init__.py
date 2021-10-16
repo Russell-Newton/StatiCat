@@ -1,6 +1,5 @@
 from bot import StatiCat
-from interactions.interactions import InteractionHandler, ApplicationCommand, APIRoute
-from interactions.slashcommands import slash_command, SlashContext
+from interactions.interactions import InteractionHandler, ApplicationCommand, slash_command
 
 async def setup(bot: StatiCat):
     from interactions.interactions import Interactions
@@ -13,8 +12,8 @@ async def setup(bot: StatiCat):
 
     # Rebind the bot's add and remove cog methods to one that will load and unload ApplicationCommands from cogs
     # respectively
-    from discord.ext.commands.bot import Bot, BotBase
-    from discord.ext.commands import Cog
+    from nextcord.ext.commands.bot import Bot, BotBase
+    from nextcord.ext.commands import Cog
     def wrapped_add(_bot: Bot):
         def add_cog(cog: Cog):
             # Add the cog normally
@@ -41,8 +40,8 @@ async def teardown(bot: StatiCat):
     # This happens before the Interactions cog is removed, undo the rebinding of the bot's add and remove cog methods
     from interactions.interactions import Interactions
 
-    from discord.ext.commands.bot import BotBase
-    from discord.ext.commands import Cog
+    from nextcord.ext.commands.bot import BotBase
+    from nextcord.ext.commands import Cog
     def wrapped_add(_bot: BotBase):
         def add_cog(cog: Cog):
             # Add the cog normally

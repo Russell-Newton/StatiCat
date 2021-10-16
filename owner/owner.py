@@ -2,8 +2,8 @@ import asyncio
 import logging
 from typing import Optional
 
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 
 from bot import StatiCat
 from universals import _global_data, save_global_data
@@ -75,5 +75,5 @@ class Owner(commands.Cog):
         """
         await ctx.send(getattr(self.bot, attribute))
 
-    def approval_check(self, reaction: discord.Reaction, user: discord.User):
+    def approval_check(self, reaction: nextcord.Reaction, user: nextcord.User):
         return user.id == self.bot.owner_id and str(reaction.emoji) == '👍'

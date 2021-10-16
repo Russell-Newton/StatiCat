@@ -5,8 +5,8 @@ from sys import stdout
 
 import aiohttp
 import cv2
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 import dlib
 import numpy as np
 from PIL import Image
@@ -52,7 +52,7 @@ class Fry(commands.Cog):
                 fry = await self.fry(image, do_buldge)
                 fry.save(temp_loc + ".png")
 
-                await ctx.send(file=discord.File(temp_loc + ".png"))
+                await ctx.send(file=nextcord.File(temp_loc + ".png"))
                 os.remove(temp_loc)
                 os.remove(temp_loc + ".png")
 

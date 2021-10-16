@@ -1,7 +1,7 @@
 import json
 import inspect
 
-import discord.ext.commands as commands
+import nextcord.ext.commands as commands
 
 
 class CogWithData(commands.Cog):

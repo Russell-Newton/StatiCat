@@ -5,8 +5,8 @@ import traceback
 import warnings
 from typing import List
 
-import discord
-import discord.ext.commands as commands
+import nextcord
+import nextcord.ext.commands as commands
 import imageio
 from skimage import img_as_ubyte
 from skimage.transform import resize
@@ -49,7 +49,7 @@ class DeepFake(commands.Cog):
     @commands.command(name="bakamitailatest", aliases=["bmlatest"])
     async def get_bm_latest(self, ctx: commands.Context):
         if os.path.exists(self.bm_output):
-            await ctx.send("Viola!", file=discord.File(self.bm_output))
+            await ctx.send("Viola!", file=nextcord.File(self.bm_output))
         else:
             await ctx.send(
                 f"There is no valid history for the Baka Mitai deep fakes. Create a new one with `{ctx.prefix}bakamitai`!")
@@ -63,12 +63,12 @@ class DeepFake(commands.Cog):
     async def set_deepfake_video(self, ctx: commands.Context):
         """You must attach your input video in the command message! The video will automatically be reshaped to 256x256.
         For best results, do this yourself."""
-        attachments: List[discord.Attachment] = ctx.message.attachments
+        attachments: List[nextcord.Attachment] = ctx.message.attachments
         if len(attachments) > 0:
             try:
                 await attachments[0].save(self.df_template)
                 await ctx.send("Template video set!")
-            except discord.HTTPException as error:
+            except nextcord.HTTPException as error:
                 await ctx.send("Unable to use attached content.")
                 traceback.print_exception(type(error), error, error.__traceback__)
                 logging.exception("Unable to use attached content.")
@@ -95,11 +95,11 @@ class DeepFake(commands.Cog):
             return
         self.is_already_running = True
 
-        attachments: List[discord.Attachment] = ctx.message.attachments
+        attachments: List[nextcord.Attachment] = ctx.message.attachments
         if len(attachments) > 0:
             try:
                 await attachments[0].save(input_image)
-            except discord.HTTPException as error:
+            except nextcord.HTTPException as error:
                 await ctx.send("Unable to use attached content.")
                 traceback.print_exception(type(error), error, error.__traceback__)
                 logging.exception("Unable to use attached content.")
@@ -160,7 +160,7 @@ class DeepFake(commands.Cog):
             os.remove(self.generated_fast)
 
         if os.path.exists(output_video):
-            await ctx.send("Viola!", file=discord.File(output_video))
+            await ctx.send("Viola!", file=nextcord.File(output_video))
         else:
             await ctx.send("Looks like I had some trouble making the video... Hopefully that will be fixed soon :(")
 

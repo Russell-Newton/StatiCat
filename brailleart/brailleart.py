@@ -6,7 +6,7 @@ from io import BytesIO
 from typing import List
 
 import aiohttp
-import discord.ext.commands as commands
+import nextcord.ext.commands as commands
 from PIL import Image
 
 from bot import StatiCat
