@@ -26,7 +26,7 @@ async def setup(bot: StatiCat):
     def wrapped_remove(_bot: Bot):
         def remove_cog(name: str):
             # Remove ApplicationCommands from the Cog when possible
-            _bot.loop.create_task(instance.remove_from_cog(_bot.get_cog(name)))
+            _bot.loop.create_task(instance.remove_from_cog(_bot.get_cog(name), False))
             # Remove the cog normally
             BotBase.remove_cog(_bot, name)
 

@@ -41,7 +41,8 @@ class ExtractVid(commands.Cog):
                                           Callable[[str], Awaitable[Optional[io.BytesIO]]]]] = {
             "ifunny": (re.compile("^https://ifunny.co/video/..+$"), self.extract_from_ifunny),
             "tiktok": (re.compile("^https://vm.tiktok.com/[a-zA-Z0-9]+/$"), self.extract_from_tiktok),
-            "tiktoklong": (re.compile("^https://www.tiktok.com/@[a-zA-Z0-9_.]+/video/[0-9]+\S*$"), self.extract_from_tiktok_long)
+            "tiktoklong": (
+            re.compile("^https://www.tiktok.com/@[a-zA-Z0-9_.]+/video/[0-9]+\S*$"), self.extract_from_tiktok_long)
         }
         self.agent = UserAgent().chrome
 
@@ -138,9 +139,11 @@ class ExtractVid(commands.Cog):
         """
         options = webdriver.ChromeOptions()
         options.add_argument("--headless")
-        options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36")
+        options.add_argument(
+            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36")
         options.add_argument("--disable-gpu")
-        browser = webdriver.Chrome(executable_path=ChromeDriverManager(log_level=0).install(), options=options)
+        browser = webdriver.Chrome(executable_path=ChromeDriverManager(log_level=0, print_first_line=False).install(),
+                                   options=options)
 
         browser.get(link)
 
