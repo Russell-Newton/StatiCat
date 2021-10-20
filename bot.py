@@ -103,7 +103,7 @@ class EmbeddingHelpCommand(commands.HelpCommand):
         self.embedinator.footer = "Type `{0}help <command>` for more info on a command. You can also type `{0}help <category>` for more info on a category.".format(
             self.context.prefix)
 
-        for embed in self.embedinator.as_embeds(thumbnail_url=self.context.bot.user.avatar_url, **options):
+        for embed in self.embedinator.as_embeds(thumbnail_url=self.context.bot.user.avatar.url, **options):
             await destination.send(embed=embed)
         self.embedinator.clear()
 

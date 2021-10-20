@@ -8,7 +8,7 @@ from bot import StatiCat
 import nextcord
 import nextcord.ext.commands as commands
 from cogwithdata import CogWithData
-
+from interactions.converter import OptionConverter
 
 slash_command_option_type_map = {
     "subcommand": 1,
@@ -17,9 +17,16 @@ slash_command_option_type_map = {
     int: 4,
     bool: 5,
     nextcord.User: 6,
-    nextcord.abc.GuildChannel: 7,
+    nextcord.Member: 6,
+    nextcord.TextChannel: 7,
+    nextcord.DMChannel: 7,
+    nextcord.VoiceChannel: 7,
+    nextcord.GroupChannel: 7,
+    nextcord.CategoryChannel: 7,
+    nextcord.StoreChannel: 7,
+    nextcord.StageChannel: 7,
+    nextcord.Thread: 7,
     nextcord.Role: 8,
-    nextcord.Member: 9,
     float: 10
 }
 
@@ -85,9 +92,9 @@ class ApplicationCommand(abc.ABC):
         self.default_permission: bool = kwargs.get("default_permission", True)
         self.command_name: str = kwargs.get("name") or callback.__name__
         self.command_edit_data: dict[str, Any] = {
-                "name": self.command_name,
-                "type": self.application_command_type,
-                "default_permission": self.default_permission
+            "name": self.command_name,
+            "type": self.application_command_type,
+            "default_permission": self.default_permission
         }
         self.parent: Optional[ApplicationCommand] = None
 
@@ -107,7 +114,8 @@ class ApplicationCommand(abc.ABC):
             if guild is None:
                 response_instance = await self.bot.http.upsert_global_command(self.bot.user.id, self.command_edit_data)
             else:
-                response_instance = await self.bot.http.upsert_guild_command(self.bot.user.id, guild, self.command_edit_data)
+                response_instance = await self.bot.http.upsert_guild_command(self.bot.user.id, guild,
+                                                                             self.command_edit_data)
 
             logging.info(f"Deployed a {self.__class__.__name__}:\n {response_instance}")
 
@@ -190,7 +198,10 @@ class ApplicationCommandHandler(InteractionHandler, _type=nextcord.InteractionTy
         command = available_commands.get((target_name, target_type), None)
         if command is None:
             return
-        return await command.invoke(self.interaction)
+        try:
+            return await command.invoke(self.interaction)
+        except Exception as error:
+            logging.exception("Failed to invoke an Application Command.", exc_info=error)
 
 
 class MessageComponentHandler(InteractionHandler, _type=nextcord.InteractionType.component):
@@ -214,6 +225,7 @@ class SlashCommand(ApplicationCommand, _type=1):
 
         # Add a description and options to each json_data instance
         self.command_edit_data["description"] = command_description
+        self.prep_parameters()
 
     def prep_parameters(self):
         command_options = []
@@ -255,6 +267,9 @@ class SlashCommand(ApplicationCommand, _type=1):
                 else:
                     sub_data["type"] = slash_command_option_type_map["subcommand"]
 
+                if "default_permission" in sub_data.keys():
+                    sub_data.pop("default_permission")
+
                 if "options" not in com.command_edit_data.keys():
                     com.command_edit_data["options"] = []
                 com.command_edit_data["options"].append(sub_data)
@@ -263,12 +278,14 @@ class SlashCommand(ApplicationCommand, _type=1):
 
         # Reevaluate up
         if current_depth >= 2:
-            raise NotImplementedError(f"Nesting of subcommand groups is not supported! Problem exists with {self.command_edit_data}")
+            raise NotImplementedError(
+                f"Nesting of subcommand groups is not supported! Problem exists with {self.command_edit_data}")
         if self.parent is not None:
             try:
                 self.parent.evaluate_subcommands(current_depth=current_depth + 1)
             except NotImplementedError:
-                raise NotImplementedError(f"Nesting of subcommand groups is not supported! Problem exists with {self.command_edit_data}")
+                raise NotImplementedError(
+                    f"Nesting of subcommand groups is not supported! Problem exists with {self.command_edit_data}")
 
     async def invoke(self, interaction: nextcord.Interaction):
         args = []
@@ -286,7 +303,7 @@ class SlashCommand(ApplicationCommand, _type=1):
                 # Subcommand or Subcommand group
                 await interaction.response.send_message("Subcommands are currently not supported :(", ephemeral=True)
                 raise NotImplementedError
-            kwargs[option["name"]] = option["value"]
+            kwargs[option["name"]] = await OptionConverter(self.bot, interaction, option).convert()
 
         return await self.callback(*args, **kwargs)
 
@@ -312,6 +329,7 @@ class SlashCommand(ApplicationCommand, _type=1):
             return subcommand
 
         return decorator
+
 
 class Interactions(CogWithData):
 
@@ -383,8 +401,13 @@ class Interactions(CogWithData):
             if (command["name"], command["type"]) not in self.commands.keys():
                 await self.bot.http.delete_global_command(self.bot.user.id, command['id'])
                 logging.info(f"Deleted stale command:\n{command}")
-            elif compare_online_with_offline_commands(command, self.commands[(command["name"], command["type"])].command_edit_data):
-                intersection.append(command["name"])
+            else:
+                offline = self.commands[(command["name"], command["type"])]
+                if None not in offline.instances.keys():
+                    await self.bot.http.delete_global_command(self.bot.user.id, command['id'])
+                    logging.info(f"Deleted stale command:\n{command}")
+                elif compare_online_with_offline_commands(command, offline.command_edit_data):
+                    intersection.append(command["name"])
 
         # Identify guild commands that need syncing
         for guild in self.bot.guilds:
@@ -392,10 +415,15 @@ class Interactions(CogWithData):
             upstream = await self.get_deployed_guild_commands(guild_id)
             for command in upstream:
                 if (command["name"], command["type"]) not in self.commands.keys():
-                    await self.bot.http.delete_guild_command(self.bot.user.id, guild_id,command['id'])
+                    await self.bot.http.delete_guild_command(self.bot.user.id, guild_id, command['id'])
                     logging.info(f"Deleted stale command:\n{command}")
-                elif compare_online_with_offline_commands(command, self.commands[(command["name"], command["type"])].command_edit_data):
-                    intersection.append(command["name"])
+                else:
+                    offline = self.commands[(command["name"], command["type"])]
+                    if guild_id not in offline.instances.keys():
+                        await self.bot.http.delete_guild_command(self.bot.user.id, guild_id, command['id'])
+                        logging.info(f"Deleted stale command:\n{command}")
+                    elif compare_online_with_offline_commands(command, offline.command_edit_data):
+                        intersection.append(command["name"])
 
         # Deploy offline commands that should be online
         for (name, _type), command in self.commands.items():

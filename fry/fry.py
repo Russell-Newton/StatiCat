@@ -1,3 +1,4 @@
+import logging
 import math
 import os
 from datetime import datetime
@@ -49,12 +50,17 @@ class Fry(commands.Cog):
                 with open(temp_loc, 'wb') as f:
                     f.write(imageData)
                     image = Image.open(temp_loc).convert('RGB')
-                fry = await self.fry(image, do_buldge)
-                fry.save(temp_loc + ".png")
+                try:
+                    fry = await self.fry(image, do_buldge)
+                    fry.save(temp_loc + ".png")
 
-                await ctx.send(file=nextcord.File(temp_loc + ".png"))
+                    await ctx.send(file=nextcord.File(temp_loc + ".png"))
+                    os.remove(temp_loc + ".png")
+                except Exception as error:
+                    logging.exception("Problem occurred during fryimg", exc_info=error)
+                    await ctx.send("Something went wrong with frying your image :(")
+
                 os.remove(temp_loc)
-                os.remove(temp_loc + ".png")
 
         except IndexError:
             await ctx.send("There is no attached image.")
