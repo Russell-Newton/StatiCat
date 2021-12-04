@@ -19,6 +19,7 @@ import interactions
 from bot import StatiCat
 from checks import check_permissions
 from cogwithdata import CogWithData
+from interactions import command_also_slash_command
 
 
 class UnavailablePokemonError(ValueError):
@@ -188,6 +189,7 @@ class General(CogWithData):
 
         return palette
 
+    @command_also_slash_command()
     @commands.command()
     async def invite(self, ctx):
         """Get a link to invite me to your server!"""

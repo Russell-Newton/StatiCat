@@ -21,6 +21,9 @@ from selenium import webdriver
 from bot import StatiCat
 
 
+TIKTOK_FAILED_EXTRACT = "TikTok Fail"
+
+
 def get_tiktok_cookies():
     device_id = "".join(random.choice(string.digits) for _ in range(19))
     return {
@@ -149,7 +152,10 @@ class ExtractVid(commands.Cog):
 
         soup = BeautifulSoup(browser.page_source, features="lxml")
         browser.quit()
-        full_link = soup.find("link", {"rel": "canonical"})["href"]
+        try:
+            full_link = soup.find("link", {"rel": "canonical"})["href"]
+        except TypeError:
+            return TIKTOK_FAILED_EXTRACT
 
         return await self.extract_from_tiktok_long(full_link)
 
@@ -162,6 +168,8 @@ class ExtractVid(commands.Cog):
         for k, v in self.pattern_map.items():
             if ExtractVid._validate_link_format(content, v[0]):
                 data = await v[1](content)
+                if data is TIKTOK_FAILED_EXTRACT:
+                    await message.reply(f"I couldn't get that video from TikTok, the API is janky. Try a second time or with the long link :)")
                 if data is not None:
                     video = nextcord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4')
                     try:
@@ -170,8 +178,8 @@ class ExtractVid(commands.Cog):
                             file=video)
                     except nextcord.HTTPException as e:
                         if e.code == 40005:
-                            await channel.send("I'd extract that video for you, but it's too big")
-                            pass
+                            await message.reply("I'd extract that video for you, but it's too big")
+                            return
                     try:
                         await message.delete()
                     except nextcord.Forbidden:

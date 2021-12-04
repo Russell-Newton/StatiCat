@@ -22,3 +22,4 @@ scikit-image
 pyyaml
 tqdm
 fake-useragent
+pyttsx3

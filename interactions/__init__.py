@@ -1,5 +1,6 @@
 from bot import StatiCat
-from interactions.interactions import InteractionHandler, ApplicationCommand, slash_command
+from interactions.interactions import InteractionHandler, ApplicationCommand, slash_command, command_also_slash_command
+from interactions.context import SlashInteractionAliasContext
 
 async def setup(bot: StatiCat):
     from interactions.interactions import Interactions
@@ -7,8 +8,6 @@ async def setup(bot: StatiCat):
     instance = Interactions(bot)
     bot.add_cog(instance)
     await instance.add_from_loaded_cogs()
-
-    _previous_add_cog_command = bot.add_cog
 
     # Rebind the bot's add and remove cog methods to one that will load and unload ApplicationCommands from cogs
     # respectively
@@ -26,7 +25,7 @@ async def setup(bot: StatiCat):
     def wrapped_remove(_bot: Bot):
         def remove_cog(name: str):
             # Remove ApplicationCommands from the Cog when possible
-            _bot.loop.create_task(instance.remove_from_cog(_bot.get_cog(name), False))
+            _bot.loop.create_task(instance.remove_from_cog(_bot.get_cog(name)))
             # Remove the cog normally
             BotBase.remove_cog(_bot, name)
 

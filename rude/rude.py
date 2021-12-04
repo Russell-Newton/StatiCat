@@ -1,9 +1,15 @@
+import logging
+import os
 from random import choice
 from typing import Union
+import subprocess
 
 import nextcord
 import nextcord.ext.commands as commands
+import pyttsx3
+from nextcord import InteractionResponse, InteractionMessage
 
+import interactions
 from bot import StatiCat
 from checks import check_permissions
 from cogwithdata import CogWithData
@@ -13,6 +19,8 @@ class Rude(CogWithData):
     def __init__(self, bot: StatiCat):
         self.bot = bot
         super().__init__("targets")
+        self.beta_male_video = self.get_path("beta_male.mov")
+        self.beta_male_audio = self.get_path("beta_male_audio.mov")
 
     @check_permissions(['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members'], False)
     @commands.group(name="mimic", pass_context=True)
@@ -150,3 +158,36 @@ class Rude(CogWithData):
                     await channel.send("Stop typing, {0.mention}".format(user))
             except Exception:
                 pass
+
+    @interactions.slash_command(name="betamale")
+    async def beta_male_shadow(self, interaction: nextcord.Interaction, name: str):
+        """
+        Shadow the Hedgehog thinks someone's a beta male.
+        :param name: who should Shadow call out?
+        """
+        await interaction.response.send_message("Working on it...")
+        try:
+            tts = pyttsx3.init(debug=True)
+            temp_tts_path = self.get_path(f"tts.mp3")
+            tts.setProperty("rate", tts.getProperty("rate") - 30)
+            tts.save_to_file(name, temp_tts_path)
+            tts.runAndWait()
+            temp_audio_path = self.get_path(f"audio.mp3")
+            print(temp_tts_path, temp_audio_path)
+            command = f"ffmpeg -y -i \"{self.beta_male_audio}\" -i \"{temp_tts_path}\" -filter_complex \"[0:0][1:0] concat=n=2:v=0:a=1 [out]\" -map \"[out]\" \"{temp_audio_path}\""
+            print(command)
+            subprocess.run(command)
+            name = "".join(c for c in name if c.isalnum() or c in (" ", ".", "_")).rstrip()[:50]
+            temp_video_path = self.get_path(f"{name}_is_a_beta.mp4")
+            command = f"ffmpeg -y -i \"{self.beta_male_video}\" -i \"{temp_audio_path}\" -filter_complex amix -c:v copy -c:a aac \"{temp_video_path}\""
+            print(command)
+            subprocess.run(command)
+            # response: InteractionResponse = interaction.response
+            await interaction.edit_original_message(content=None, file=nextcord.File(temp_video_path))
+
+            os.remove(temp_tts_path)
+            os.remove(temp_audio_path)
+            os.remove(temp_video_path)
+        except Exception as error:
+            await interaction.edit_original_message(content="Yeah that didn't work. Sorry bud")
+            logging.error("Error creating betamale video: ", exc_info=(type(error), error, error.__traceback__))

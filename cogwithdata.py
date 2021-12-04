@@ -37,3 +37,6 @@ class CogWithData(commands.Cog):
         """
         with open(self.data_file_location, 'w') as file:
             json.dump(self.data, file)
+
+    def get_path(self, relative_path) -> str:
+        return f"{self.directory}\\{relative_path}"

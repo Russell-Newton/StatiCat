@@ -24,6 +24,8 @@ colorama==0.4.4
     # via
     #   crayons
     #   tqdm
+comtypes==1.1.10
+    # via pyttsx3
 configparser==5.0.2
     # via webdriver-manager
 crayons==0.4.0
@@ -98,14 +100,22 @@ pillow==8.4.0
     #   torchvision
 pyparsing==2.4.7
     # via matplotlib
+pypiwin32==223
+    # via pyttsx3
 python-dateutil==2.8.2
     # via
     #   matplotlib
     #   pandas
+pyttsx3==2.90
+    # via -r requirements.in
 pytz==2021.3
     # via pandas
 pywavelets==1.1.1
     # via scikit-image
+pywin32==302
+    # via
+    #   pypiwin32
+    #   pyttsx3
 pyyaml==6.0
     # via -r requirements.in
 requests==2.26.0

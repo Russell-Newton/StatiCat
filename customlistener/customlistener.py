@@ -7,6 +7,7 @@ import nextcord.ext.commands as commands
 from bot import Embedinator, StatiCat
 from checks import check_permissions, check_in_guild, check_in_private
 from cogwithdata import CogWithData
+from interactions import command_also_slash_command, SlashInteractionAliasContext
 
 
 class CustomListener(CogWithData):
@@ -16,6 +17,7 @@ class CustomListener(CogWithData):
         self.embedinator = Embedinator(**{"title": "Custom Listeners**"})
         self.method_options = ["anywhere", "start", "end"]
 
+    @command_also_slash_command(name="listeners")
     @commands.check_any(
         check_permissions(['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members'], False),
         check_in_private())
@@ -24,11 +26,11 @@ class CustomListener(CogWithData):
         """Commands for managing custom listeners. Go into a server to see more commands."""
         pass
 
+    @custom_listeners.__slash_command__.subcommand(name="add")
     @check_in_guild()
     @custom_listeners.command(name="add")
     async def add_server(self, ctx: commands.Context, name: str, keyword: str, reaction: str,
-                         channel_specific: bool = False,
-                         method: Union[str, int] = 0):
+                         channel_specific: bool = False):
         """
         Add a custom listener to the server.
         **name** The name of the reaction. This is important for removing and listing custom listeners.
@@ -37,6 +39,7 @@ class CustomListener(CogWithData):
         **channel_specific** Should this reaction only exist for this channel? [True/False] (Defaults to False)
         **method** Where should I look for the keyword? [anywhere/start/end or 0/1/2] (Defaults to anywhere)
         """
+        method = 0
         if isinstance(method, int):
             try:
                 method = self.method_options[method]
@@ -49,14 +52,17 @@ class CustomListener(CogWithData):
             "keyword": keyword.lower(),
             "reaction": reaction,
             "method": method.lower(),
-            "channel": ctx.message.channel.id if channel_specific else False
+            "channel": ctx.channel.id if channel_specific else False
         }
         if str(ctx.guild.id) not in self.data:
             self.data[str(ctx.guild.id)] = {}
         self.data[str(ctx.guild.id)][name] = listener
         self.update_data_file()
-        # await ctx.send("Added {}!".re_format(name))
 
+        if isinstance(ctx, SlashInteractionAliasContext):
+            await ctx.send(f"Added a new custom listener to the {'channel' if channel_specific else 'server'}!\n> Trigger: {keyword.lower()}\n> Reaction: {reaction}")
+
+    @custom_listeners.__slash_command__.subcommand(name="remove")
     @check_in_guild()
     @custom_listeners.command(name="remove")
     async def remove_server(self, ctx: commands.Context, name: str):
@@ -69,37 +75,40 @@ class CustomListener(CogWithData):
         try:
             del self.data[str(ctx.guild.id)][name]
             self.update_data_file()
-            await ctx.send("Removed {}!".format(name))
+            await ctx.send("Removed the listener called {}!".format(name))
         except KeyError:
             await ctx.send("There isn't a listener named {} for this server.".format(name))
             return
 
+    @custom_listeners.__slash_command__.subcommand(name="list")
     @check_in_guild()
     @custom_listeners.command(name="list")
     async def list_server(self, ctx: commands.Context):
         """
         List the listeners for this server, by name.
         """
-        if str(ctx.message.guild.id) not in self.data:
+        prefix = self.bot.command_prefix(self.bot, None)
+        if isinstance(prefix, list):
+            prefix = prefix[0]
+        if str(ctx.guild.id) not in self.data:
             await ctx.send(
-                "There are no custom listeners for this server. Add one with `{0.prefix}customlistener add`!".format(
-                    ctx))
+                f"There are no custom listeners for this server. Add one with `{prefix}customlistener add`!")
             return
-        self.embedinator.footer = "Type `{0.prefix}customlisteners info <listener name>` for more info about a listener.".format(
-            ctx)
+        self.embedinator.footer = f"Type `{prefix}customlisteners info <listener name>` or use /listeners info <listener name> for more info about a listener."
         self.embedinator.add_line("__Listeners for {0.guild.name}__".format(ctx))
-        for name, info in sorted(self.data[str(ctx.message.guild.id)].items()):
+        for name, info in sorted(self.data[str(ctx.guild.id)].items()):
             self.embedinator.add_line(name)
 
-        for embed in self.embedinator.as_embeds(thumbnail_url=self.bot.user.avatar_url):
+        for embed in self.embedinator.as_embeds(thumbnail_url=self.bot.user.avatar.url):
             await ctx.send(embed=embed)
         self.embedinator.clear()
 
+    @custom_listeners.__slash_command__.subcommand(name="info")
     @check_in_guild()
     @custom_listeners.command("info")
     async def info_server(self, ctx: commands.Context, name: str):
         """
-        Get info about a listener.
+        Get info about a listener. Use the list subcommand to get a list of listeners.
         """
         try:
             listener = self.data[str(ctx.guild.id)][name]
@@ -110,11 +119,11 @@ class CustomListener(CogWithData):
         self.embedinator.add_line("__{}__".format(name))
         self.embedinator.add_line("Keyword: {}".format(listener["keyword"]))
         self.embedinator.add_line("Reaction: {}".format(listener["reaction"]))
-        self.embedinator.add_line("Method: {}".format(listener["method"]))
+        # self.embedinator.add_line("Method: {}".format(listener["method"]))
         if ctx.channel.id == listener["channel"]:
             self.embedinator.add_line("Channel: {0.mention}".format(ctx.channel))
 
-        for embed in self.embedinator.as_embeds(thumbnail_url=self.bot.user.avatar_url):
+        for embed in self.embedinator.as_embeds(thumbnail_url=self.bot.user.avatar.url):
             await ctx.send(embed=embed)
         self.embedinator.clear()
 

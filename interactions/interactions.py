@@ -2,12 +2,17 @@ import abc
 import asyncio
 import inspect
 import logging
-from typing import Type, Union, Any, Optional
+import traceback
+from typing import Type, Union, Any, Optional, List
+
+from nextcord.ext.commands import Command, Cog, CheckFailure
+from nextcord.ext.commands._types import Check
 
 from bot import StatiCat
 import nextcord
 import nextcord.ext.commands as commands
 from cogwithdata import CogWithData
+from interactions.context import SlashInteractionAliasContext
 from interactions.converter import OptionConverter
 
 slash_command_option_type_map = {
@@ -101,11 +106,19 @@ class ApplicationCommand(abc.ABC):
         # Instances are saved as
         # guild_id/None: {"data": json_data, "deploy_url": deploy_url}
         self.instances: dict[Optional[int], dict[str, Any]] = {}
-        self.subcommands: list[ApplicationCommand] = list()
+        self.subcommands: dict[str, ApplicationCommand] = {}
 
         guilds = guild if isinstance(guild, list) else [guild]
         for guild_id in guilds:
             self.instances[guild_id] = {}
+
+        try:
+            checks = callback.__commands_checks__
+            checks.reverse()
+        except AttributeError:
+            checks = kwargs.get('checks', [])
+
+        self.checks: List[Check] = checks
 
     async def deploy(self):
         if self.bot is None:
@@ -145,9 +158,31 @@ class ApplicationCommand(abc.ABC):
     def add_subcommand(self, subcommand):
         if subcommand.parent is not None:
             raise ValueError("An ApplicationCommand can only have one parent!")
-        self.subcommands.append(subcommand)
+        self.subcommands[subcommand.command_name] = subcommand
         subcommand.parent = self
+        subcommand.bot = self.bot
+        subcommand.cog = self.cog
         self.evaluate_subcommands()
+
+    def add_check(self, func: Check) -> None:
+        """Adds a check to the command.
+
+        This is the non-decorator interface to :func:`.check`.
+        """
+
+        self.checks.append(func)
+
+    def remove_check(self, func: Check) -> None:
+        """Removes a check from the command.
+
+        This function is idempotent and will not raise an exception
+        if the function is not in the command's checks.
+        """
+
+        try:
+            self.checks.remove(func)
+        except ValueError:
+            pass
 
 
 class ApplicationCommandsDict(dict[tuple[str, int], ApplicationCommand]):
@@ -160,6 +195,9 @@ class ApplicationCommandsDict(dict[tuple[str, int], ApplicationCommand]):
 
     def __setitem__(self, k: tuple[str, int], v: ApplicationCommand) -> None:
         v.bot = self.bot
+        for subcommand in v.subcommands.values():
+            subcommand.bot = self.bot
+            subcommand.cog = v.cog
         super().__setitem__(k, v)
 
 
@@ -200,6 +238,11 @@ class ApplicationCommandHandler(InteractionHandler, _type=nextcord.InteractionTy
             return
         try:
             return await command.invoke(self.interaction)
+        except CheckFailure:
+            if self.interaction.response.is_done():
+                await self.interaction.followup.send(content="You don't have permission to use that command here.", ephemeral=True)
+            else:
+                await self.interaction.response.send_message(content="You don't have permission to use that command here.", ephemeral=True)
         except Exception as error:
             logging.exception("Failed to invoke an Application Command.", exc_info=error)
 
@@ -224,7 +267,7 @@ class SlashCommand(ApplicationCommand, _type=1):
                 command_description = command_description.decode("utf-8")
 
         # Add a description and options to each json_data instance
-        self.command_edit_data["description"] = command_description
+        self.command_edit_data["description"] = command_description.split("\n")[0][:100]
         self.prep_parameters()
 
     def prep_parameters(self):
@@ -260,7 +303,7 @@ class SlashCommand(ApplicationCommand, _type=1):
 
         # Evaluate one level lower
         def eval_down(com):
-            for sub in com.subcommands:
+            for sub in com.subcommands.values():
                 sub_data = sub.command_edit_data
                 if len(sub.subcommands) > 0:
                     sub_data["type"] = slash_command_option_type_map["subcommandgroup"]
@@ -287,7 +330,27 @@ class SlashCommand(ApplicationCommand, _type=1):
                 raise NotImplementedError(
                     f"Nesting of subcommand groups is not supported! Problem exists with {self.command_edit_data}")
 
+    async def invoke_subcommand(self, interaction: nextcord.Interaction, subcommand_options):
+        subcommand: SlashCommand = self.subcommands[subcommand_options["name"]] # type: ignore
+        if not await subcommand.can_run(interaction):
+            raise CheckFailure(f'The check functions for command {self.command_name} failed.')
+        options = subcommand_options.get("options", [])
+
+        args = []
+        if subcommand.cog is not None:
+            args.append(subcommand.cog)
+        args.append(interaction)
+
+        kwargs = {}
+        for option in options:
+            kwargs[option["name"]] = await OptionConverter(self.bot, interaction, option).convert()
+
+        return await subcommand.callback(*args, **kwargs)
+
     async def invoke(self, interaction: nextcord.Interaction):
+        if not await self.can_run(interaction):
+            raise CheckFailure(f'The check functions for command {self.command_name} failed.')
+
         args = []
         if self.cog is not None:
             args.append(self.cog)
@@ -299,10 +362,11 @@ class SlashCommand(ApplicationCommand, _type=1):
         options = data.get("options", [])
         # Application Command Interaction Data Option Structure
         for option in options:
-            if option["type"] in (1, 2):
-                # Subcommand or Subcommand group
-                await interaction.response.send_message("Subcommands are currently not supported :(", ephemeral=True)
-                raise NotImplementedError
+            if option["type"] == 1:
+                return await self.invoke_subcommand(interaction, option)
+            if option["type"] == 2:
+                raise ValueError("I haven't gotten to subcommand groups yet")
+
             kwargs[option["name"]] = await OptionConverter(self.bot, interaction, option).convert()
 
         return await self.callback(*args, **kwargs)
@@ -318,17 +382,70 @@ class SlashCommand(ApplicationCommand, _type=1):
         if cls is None:
             cls = SlashCommand
 
-        def decorator(func):
-            if isinstance(func, SlashCommand):
-                raise TypeError(f'Callback is already a {type(func)}.')
-            if not asyncio.iscoroutinefunction(func):
+        def decorator(command):
+            if isinstance(command, Command):
+                new_slash = cls(command.callback, list(self.instances.keys()), name=name, checks=command.checks, **attrs)
+
+                async def slashified_callback(*args, **kwargs):
+                    if new_slash.cog is not None:
+                        idx = 1
+                    else:
+                        idx = 0
+                    new_args = list(args)
+                    interaction: nextcord.Interaction = new_args[idx]
+                    await interaction.response.defer()
+                    new_args[idx] = SlashInteractionAliasContext(interaction, new_slash.bot, new_args, kwargs)
+                    new_args = tuple(new_args)
+
+                    return await command.callback(*new_args, **kwargs)
+
+                slashified_callback.__name__ = command.callback.__name__
+                if hasattr(command.callback, "__commands_checks__"):
+                    slashified_callback.__commands_checks__ = command.callback.__commands_checks__
+
+                new_slash.callback = slashified_callback
+                command.__slash_command__ = new_slash
+
+                self.add_subcommand(new_slash)
+
+                return command
+            if isinstance(command, SlashCommand):
+                raise TypeError(f'Callback is already a {type(command)}.')
+            if not asyncio.iscoroutinefunction(command):
                 raise TypeError('Callback must be a coroutine.')
 
-            subcommand = cls(func, list(self.instances.keys()), name=name, **attrs)
+            subcommand = cls(command, list(self.instances.keys()), name=name, **attrs)
             self.add_subcommand(subcommand)
             return subcommand
 
         return decorator
+
+    async def can_run(self, interaction: nextcord.Interaction) -> bool:
+        ctx = SlashInteractionAliasContext(interaction, self.bot)
+
+        original = ctx.command
+        ctx.command = self
+
+        try:
+            if not await self.bot.can_run(ctx):
+                raise CheckFailure(f'The global check functions for command {self.command_name} failed.')
+
+            cog = self.cog
+            if cog is not None:
+                local_check = Cog._get_overridden_method(cog.cog_check)
+                if local_check is not None:
+                    ret = await nextcord.utils.maybe_coroutine(local_check, ctx)
+                    if not ret:
+                        return False
+
+            predicates = self.checks
+            if not predicates:
+                # since we have no checks, then we just return True.
+                return True
+
+            return await nextcord.utils.async_all(predicate(ctx) for predicate in predicates)  # type: ignore
+        finally:
+            ctx.command = original
 
 
 class Interactions(CogWithData):
@@ -357,9 +474,17 @@ class Interactions(CogWithData):
             await ctx.send("THIS GUILD'S APPLICATION COMMANDS:")
             await ctx.send(str(await self.get_deployed_guild_commands(guild.id)))
 
+    async def add_command(self, command: ApplicationCommand, sync: bool = True):
+        self.commands[(command.command_name, command.application_command_type)] = command
+
+        if sync:
+            await self.sync_commands()
+
     async def add_from_cog(self, cog: commands.Cog, sync: bool = True):
         for base in reversed(cog.__class__.__mro__):
             for elem, value in base.__dict__.items():
+                if hasattr(value, '__slash_command__'):
+                    value = value.__slash_command__
                 if hasattr(value, 'application_command_type'):
                     if isinstance(value, staticmethod):
                         raise TypeError(f"ApplicationCommand {cog.__name__}.{elem} must not be a staticmethod.")
@@ -379,9 +504,18 @@ class Interactions(CogWithData):
         if sync:
             await self.sync_commands()
 
+    async def remove_command(self, command: ApplicationCommand, sync: bool = True):
+        if command.parent is not None:
+            return
+        self.commands.pop((command.command_name, command.application_command_type))
+        if sync:
+            await self.sync_commands()
+
     async def remove_from_cog(self, cog: commands.Cog, sync: bool = True):
         for base in reversed(cog.__class__.__mro__):
             for elem, value in base.__dict__.items():
+                if hasattr(value, '__slash_command__'):
+                    value = value.__slash_command__
                 if hasattr(value, 'application_command_type'):
                     if isinstance(value, staticmethod):
                         raise TypeError(f"ApplicationCommand {cog.__name__}.{elem} must not be a staticmethod.")
@@ -428,7 +562,13 @@ class Interactions(CogWithData):
         # Deploy offline commands that should be online
         for (name, _type), command in self.commands.items():
             if name not in intersection:
-                await command.deploy()
+                try:
+                    await command.deploy()
+                except nextcord.HTTPException or nextcord.Forbidden as error:
+                    logging.error(f"Unable to sync command {command.command_name}!",
+                                  exc_info=(type(error), error, error.__traceback__))
+                    print(f"Unable to sync command {command.command_name}!")
+                    traceback.print_exception(type(error), error, error.__traceback__)
 
     @commands.Cog.listener()
     async def on_interaction(self, interaction: nextcord.Interaction):
@@ -449,12 +589,53 @@ def slash_command(guild: Union[int, list[int]] = None, name: str = None, cls=Non
     if cls is None:
         cls = SlashCommand
 
-    def decorator(func):
-        if isinstance(func, SlashCommand):
+    def decorator(command):
+        if isinstance(command, SlashCommand):
             raise TypeError('Callback is already a slash command.')
-        if not asyncio.iscoroutinefunction(func):
+        if not asyncio.iscoroutinefunction(command):
             raise TypeError('Callback must be a coroutine.')
 
-        return cls(func, guild, name=name, **attrs)
+        return cls(command, guild, name=name, **attrs)
+
+    return decorator
+
+
+def command_also_slash_command(guild: Union[int, list[int]] = None, name: str = None, cls=None, **attrs):
+    """
+    A decorator that creates a SlashCommand from a Command while preserving the original Command.
+    :param guild:
+    :param name:
+    :param cls:
+    :param attrs:
+    :return:
+    """
+
+    if cls is None:
+        cls = SlashCommand
+
+    def decorator(command: Command):
+
+        new_slash = cls(command.callback, guild, name=name, checks=command.checks, **attrs)
+
+        async def slashified_callback(*args, **kwargs):
+            if new_slash.cog is not None:
+                idx = 1
+            else:
+                idx = 0
+            new_args = list(args)
+            interaction: nextcord.Interaction = new_args[idx]
+            await interaction.response.defer()
+            new_args[idx] = SlashInteractionAliasContext(interaction, new_slash.bot, new_args, kwargs)
+            new_args = tuple(new_args)
+
+            return await command.callback(*new_args, **kwargs)
+        slashified_callback.__name__ = command.callback.__name__
+        if hasattr(command.callback, "__commands_checks__"):
+            slashified_callback.__commands_checks__ = command.callback.__commands_checks__
+
+        new_slash.callback = slashified_callback
+        command.__slash_command__ = new_slash
+
+        return command
 
     return decorator
