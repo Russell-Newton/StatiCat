@@ -1,5 +1,5 @@
 from bot import StatiCat
-from interactions.interactions import InteractionHandler, ApplicationCommand, slash_command, command_also_slash_command
+from interactions.interactions import InteractionHandler, ApplicationCommand, slash_command, command_also_slash_command, message_command
 from interactions.context import SlashInteractionAliasContext
 
 async def setup(bot: StatiCat):

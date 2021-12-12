@@ -193,7 +193,7 @@ class General(CogWithData):
     @commands.command()
     async def invite(self, ctx):
         """Get a link to invite me to your server!"""
-        await ctx.send('Invite me! {}'.format(nextcord.utils.oauth_url(client_id='702205746493915258')))
+        await ctx.send(f'Invite me! {StatiCat.get_invite_link()}')
 
     @commands.command(name="8ball")
     async def eight_ball(self, ctx):

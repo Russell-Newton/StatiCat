@@ -448,6 +448,31 @@ class SlashCommand(ApplicationCommand, _type=1):
             ctx.command = original
 
 
+class MessageCommand(ApplicationCommand, _type=3):
+    def __init__(self, callback, guild: Union[int, list[int]] = None, **kwargs):
+        super().__init__(callback, guild, **kwargs)
+
+    async def invoke(self, interaction: nextcord.Interaction):
+        args = []
+        if self.cog is not None:
+            args.append(self.cog)
+        args.append(interaction)
+
+        message_id = interaction.data["target_id"]
+        channel_id = interaction.data["resolved"]["messages"][message_id]["channel_id"]
+        channel = await self.bot.fetch_channel(channel_id)
+        message: nextcord.Message = await channel.fetch_message(message_id)
+        args.append(message)
+
+        return await self.callback(*args)
+
+    def evaluate_subcommands(self, *args, **kwargs):
+        pass
+
+    def subcommand(self, name: str = None, cls=None, **attrs):
+        pass
+
+
 class Interactions(CogWithData):
 
     def __init__(self, bot: StatiCat):
@@ -468,11 +493,14 @@ class Interactions(CogWithData):
     @commands.command(name="listappcomms")
     async def list_deployed_commands(self, ctx: commands.Context):
         await ctx.send("GLOBAL APPLICATION COMMANDS:")
-        await ctx.send(str(await self.get_deployed_global_commands()))
+        for item in await self.get_deployed_global_commands():
+            await ctx.send(str(item))
+        # await ctx.send(str(await self.get_deployed_global_commands()))
         guild: nextcord.Guild = ctx.guild
         if guild:
             await ctx.send("THIS GUILD'S APPLICATION COMMANDS:")
-            await ctx.send(str(await self.get_deployed_guild_commands(guild.id)))
+            for item in await self.get_deployed_guild_commands(guild.id):
+                await ctx.send(str(item))
 
     async def add_command(self, command: ApplicationCommand, sync: bool = True):
         self.commands[(command.command_name, command.application_command_type)] = command
@@ -577,7 +605,8 @@ class Interactions(CogWithData):
 
 def slash_command(guild: Union[int, list[int]] = None, name: str = None, cls=None, **attrs):
     """
-    A decorator that transforms a function into a :class:`SlashCommand`.
+    A decorator that transforms a function into a :class:`.SlashCommand`. Such functions must take in a
+    :class:`nextcord.Interaction` as their first (not self) parameter.
 
     :param guild: The guild id to register this slash command for.
     :param name: The name to create the slash command with. By default this uses the function name unchanged.
@@ -637,5 +666,30 @@ def command_also_slash_command(guild: Union[int, list[int]] = None, name: str = 
         command.__slash_command__ = new_slash
 
         return command
+
+    return decorator
+
+
+def message_command(guild: Union[int, list[int]] = None, name: str = None, cls=None, **attrs):
+    """
+    A decorator that transforms a function into a :class:`.MessageCommand`. Such functions must take in a
+    :class:`nextcord.Interaction` and a :class:`nextcord.Message` as their first two (not self) parameters.
+
+    :param guild: The guild id to register this slash command for.
+    :param name: The name to create the slash command with. By default this uses the function name unchanged.
+    :param cls: The class to construct with. By default this is :class:`.MessageCommand`.
+    :param attrs: Keyword arguments to pass into the construction of the class denoted by ``cls``.
+    :raises TypeError: If the function is not a coroutine or is already a slash command.
+    """
+    if cls is None:
+        cls = MessageCommand
+
+    def decorator(command):
+        if isinstance(command, MessageCommand):
+            raise TypeError("Callback is already a message command.")
+        if not asyncio.iscoroutinefunction(command):
+            raise TypeError('Callback must be a coroutine.')
+
+        return cls(command, guild, name=name, **attrs)
 
     return decorator

@@ -14,7 +14,7 @@ class CustomListener(CogWithData):
     def __init__(self, bot: StatiCat):
         self.bot = bot
         super().__init__("listeners")
-        self.embedinator = Embedinator(**{"title": "Custom Listeners**"})
+        self.embedinator = Embedinator(**{"title": "**Custom Listeners**"})
         self.method_options = ["anywhere", "start", "end"]
 
     @command_also_slash_command(name="listeners")
@@ -60,7 +60,7 @@ class CustomListener(CogWithData):
         self.update_data_file()
 
         if isinstance(ctx, SlashInteractionAliasContext):
-            await ctx.send(f"Added a new custom listener to the {'channel' if channel_specific else 'server'}!\n> Trigger: {keyword.lower()}\n> Reaction: {reaction}")
+            await ctx.send(f"Added a new custom listener to the {'channel' if channel_specific else 'server'}!\n> Name: {name}\n> Trigger: {keyword.lower()}\n> Reaction: {reaction}")
 
     @custom_listeners.__slash_command__.subcommand(name="remove")
     @check_in_guild()
@@ -117,6 +117,7 @@ class CustomListener(CogWithData):
             return
         self.embedinator.footer = ""
         self.embedinator.add_line("__{}__".format(name))
+        self.embedinator.add_line("Keyword: {}".format(name))
         self.embedinator.add_line("Keyword: {}".format(listener["keyword"]))
         self.embedinator.add_line("Reaction: {}".format(listener["reaction"]))
         # self.embedinator.add_line("Method: {}".format(listener["method"]))
@@ -126,6 +127,35 @@ class CustomListener(CogWithData):
         for embed in self.embedinator.as_embeds(thumbnail_url=self.bot.user.avatar.url):
             await ctx.send(embed=embed)
         self.embedinator.clear()
+
+    @custom_listeners.__slash_command__.subcommand(name="help")
+    @custom_listeners.command("help")
+    async def help_server(self, ctx: commands.Context):
+        """
+        Helpful information about the CustomListeners suite.
+        """
+        prefix = self.bot.command_prefix(self.bot, None)
+        if isinstance(prefix, list):
+            prefix = prefix[0]
+        self.embedinator.footer = f"Use {prefix}customlisteners <command> or /listeners <command> to use a command!"
+        self.embedinator.add_line("There are currently **4** subcommands available with for custom listeners:")
+        self.embedinator.add_line("**list** - List all of the commands defined for the current server.")
+        self.embedinator.add_line("**info** - Display the information about the specified listener.")
+        self.embedinator.add_line("⠀⠀<name> - The name of the listener, which you can find with `list`.")
+        self.embedinator.add_line("**add** - Add a command to the current server.")
+        self.embedinator.add_line("⠀⠀<name> - The name of the listener, which you will use with `remove` and `info`.")
+        self.embedinator.add_line("⠀⠀<keyword> - What do you want me to pick out and respond to in a message?")
+        self.embedinator.add_line("⠀⠀<reaction> - What do you want me to say in response?")
+        self.embedinator.add_line("⠀⠀[channel_specific=False] - Whether or not the listener only applies to the current channel. Defaults to False.")
+        self.embedinator.add_line("**remove** - Remove a listener from the current server.")
+        self.embedinator.add_line("⠀⠀<name> - The name of the listener, which you can find with `list`.")
+        self.embedinator.add_line()
+        self.embedinator.add_line("These commands only work in servers.")
+        self.embedinator.add_line("Any parameter with multiple words will need to be surrounded with \" \" if you don't use the slash commands.")
+        for embed in self.embedinator.as_embeds(thumbnail_url=self.bot.user.avatar.url):
+            await ctx.send(embed=embed)
+        self.embedinator.clear()
+
 
     def check_message(self, method: str, keyword: str, message: nextcord.Message):
         pattern_string = r'(?P<key>' + keyword + r')'

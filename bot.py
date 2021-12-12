@@ -202,23 +202,14 @@ class StatiCat(commands.Bot):
         self.send_startup_message_to_owner = False
 
     @staticmethod
+    def get_invite_link():
+        perms: nextcord.Permissions = nextcord.Permissions.text()
+        return nextcord.utils.oauth_url(client_id='702205746493915258', permissions=perms, scopes=["bot", "applications.commands"])
+
+    @staticmethod
     def print_invite_link():
-        # perms: nextcord.Permissions = nextcord.Permissions(change_nickname=True,
-        #                                                  view_channel=True,
-        #                                                  send_messages=True,
-        #                                                  send_tts_messages=True,
-        #                                                  embed_links=True,
-        #                                                  attach_files=True,
-        #                                                  read_messages=True,
-        #                                                  read_message_history=True,
-        #                                                  add_reactions=True,
-        #                                                  connect=True,
-        #                                                  speak=True,
-        #                                                  use_voice_activation=True)
-        print('Invite me! {}'.format(nextcord.utils.oauth_url(client_id='702205746493915258'
-                                                             # , permissions=perms
-                                                             )))
-        pass
+        print(f'Invite me! {StatiCat.get_invite_link()}')
+
 
     async def load_cogs(self):
         print("Loading cogs...")

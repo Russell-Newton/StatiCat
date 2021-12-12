@@ -16,7 +16,8 @@ class Dad(CogWithData):
     def __init__(self, bot: StatiCat):
         self.bot = bot
         super().__init__("imdadblacklist")
-        self.funny_chance = 0.02
+        self.funny_chance = 0.04
+        self.dad_chance = 0.25
 
     @commands.command()
     async def dadjoke(self, ctx):
@@ -70,13 +71,13 @@ class Dad(CogWithData):
                 if word.endswith("er") and random() < self.funny_chance:
                     if word == "her" and random() >= self.funny_chance:
                         continue
-                    if random() < 0.5:
-                        await message.reply(f"\"{word}\"? I hardly even know her!")
-                    else:
-                        await message.reply(f"\"{word}\"!? It's 2021. Keep it to \"{word[:-2]}a\", please.")
+                    # if random() < 0.5:
+                    await message.reply(f"\"{word}\"? I hardly even know her!")
+                    # else:
+                    #     await message.reply(f"\"{word}\"!? It's 2021. Keep it to \"{word[:-2]}a\", please.")
                     return
                 
-        if content.lower().startswith("i'm ") or content.lower().startswith(
+        if random() < self.dad_chance and content.lower().startswith("i'm ") or content.lower().startswith(
                 'im ') or content.lower().startswith('i am '):
             nameStart = content.find('m') + 1
             nameEnd = content.find('.')

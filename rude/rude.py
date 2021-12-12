@@ -7,7 +7,6 @@ import subprocess
 import nextcord
 import nextcord.ext.commands as commands
 import pyttsx3
-from nextcord import InteractionResponse, InteractionMessage
 
 import interactions
 from bot import StatiCat
@@ -191,3 +190,13 @@ class Rude(CogWithData):
         except Exception as error:
             await interaction.edit_original_message(content="Yeah that didn't work. Sorry bud")
             logging.error("Error creating betamale video: ", exc_info=(type(error), error, error.__traceback__))
+
+    @interactions.message_command(name="Yeah that's a miss")
+    async def react_miss(self, interaction: nextcord.Interaction, message: nextcord.Message):
+        await interaction.response.send_message("I agree that *was* a miss", ephemeral=True)
+        await message.reply("https://media.discordapp.net/attachments/702212719402811422/916187308565336124/thats_a_miss.gif")
+
+    @interactions.message_command(name="Yeah that's a hit")
+    async def react_hit(self, interaction: nextcord.Interaction, message: nextcord.Message):
+        await interaction.response.send_message("I agree that *was* a hit", ephemeral=True)
+        await message.reply("https://cdn.discordapp.com/attachments/702212719402811422/916187308770852874/thats_a_hit.gif")

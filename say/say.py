@@ -70,7 +70,7 @@ class Say(commands.Cog):
             async def send_message_on_click(self, button: nextcord.ui.Button, _interaction: nextcord.Interaction):
                 if limit_clicks_to is not None and _interaction.user.id != limit_clicks_to.id:
                     await _interaction.response.send_message(
-                        f"Sorry {_interaction.user.mention}, this button is special for <@{limit_clicks_to}>."
+                        f"Sorry {_interaction.user.mention}, this button is special for {limit_clicks_to.mention}."
                     )
                     return
                 await _interaction.response.pong()
