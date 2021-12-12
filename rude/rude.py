@@ -25,6 +25,8 @@ class Rude(CogWithData):
     @commands.group(name="mimic", pass_context=True)
     async def _mimic(self, ctx):
         """Manage the mimicking status"""
+        if "mimic" not in self.data:
+            self.data["mimic"] = {}
         if ctx.invoked_subcommand is None:
             await ctx.send("You have to invoke a subcommand.")
 
@@ -32,6 +34,8 @@ class Rude(CogWithData):
     @commands.group(pass_context=True)
     async def silence(self, ctx):
         """Manage the silencing status"""
+        if "silence" not in self.data:
+            self.data["silence"] = {}
         if ctx.invoked_subcommand is None:
             await ctx.send("You have to invoke a subcommand.")
 
@@ -41,21 +45,25 @@ class Rude(CogWithData):
         if target.id is self.bot.user.id:
             await ctx.send("I can't mimic myself.")
             return
-        self.data["mimic"].append(target.id)
+        if ctx.guild.id not in self.data["mimic"]:
+            self.data["mimic"][ctx.guild.id] = []
+        self.data["mimic"][ctx.guild.id].append(target.id)
 
         await ctx.send("{0.mention} <3".format(target))
 
     @_mimic.command(name="remove", pass_context=True)
     async def mimic_remove(self, ctx, target: Union[nextcord.Member, nextcord.User]):
         """Remove someone from the list of targets"""
-        self.data["mimic"].remove(target.id)
+        if ctx.guild.id not in self.data["mimic"]:
+            self.data["mimic"][ctx.guild.id] = []
+        self.data["mimic"][ctx.guild.id].remove(target.id)
 
         await ctx.send("You're off the hook for now, {0.mention}.".format(target))
 
     @_mimic.command(name="clear", pass_context=True)
     async def mimic_clear(self, ctx):
         """Clear the list of targets"""
-        self.data["mimic"] = []
+        self.data["mimic"][ctx.guild.id] = []
 
         await ctx.send("I'll stop now.")
 
@@ -65,7 +73,9 @@ class Rude(CogWithData):
         if target.id is self.bot.user.id:
             await ctx.send("I can't silence myself.")
             return
-        self.data["silence"].append(target.id)
+        if ctx.guild.id not in self.data["silence"]:
+            self.data["silence"][ctx.guild.id] = []
+        self.data["silence"][ctx.guild.id].append(target.id)
 
         await ctx.send("{0.mention} <3".format(target))
 
@@ -86,14 +96,16 @@ class Rude(CogWithData):
     @silence.command(name="remove", pass_context=True)
     async def silence_remove(self, ctx, target: Union[nextcord.Member, nextcord.User]):
         """Remove someone from the list of targets"""
-        self.data["silence"].remove(target.id)
+        if ctx.guild.id not in self.data["silence"]:
+            self.data["silence"][ctx.guild.id] = []
+        self.data["silence"][ctx.guild.id].remove(target.id)
 
         await ctx.send("You're off the hook for now, {0.mention}.".format(target))
 
     @silence.command(name="clear", pass_context=True)
     async def silence_clear(self, ctx):
         """Clear the list of targets"""
-        self.data["silence"] = []
+        self.data["silence"][ctx.guild.id] = []
 
         await ctx.send("I'll stop now.")
 
@@ -133,9 +145,9 @@ class Rude(CogWithData):
     async def on_message(self, message: nextcord.Message):
         if message.author.id is not self.bot.user.id:
             try:
-                if message.author.id in self.data["mimic"]:
+                if message.author.id in self.data["mimic"][message.guild.id]:
                     await message.channel.send(self.spongebobify(message))
-                if message.author.id in self.data["silence"]:
+                if message.author.id in self.data["silence"][message.guild.id]:
                     try:
                         await message.delete()
                     except nextcord.Forbidden:
@@ -144,10 +156,10 @@ class Rude(CogWithData):
                 pass
 
     @commands.Cog.listener()
-    async def on_typing(self, channel: nextcord.abc.Messageable, user: Union[nextcord.User, nextcord.Member], when):
+    async def on_typing(self, channel: nextcord.TextChannel, user: Union[nextcord.User, nextcord.Member], when):
         if user.id is not self.bot.user.id:
             try:
-                if user.id in self.data["silence"]:
+                if user.id in self.data["silence"][channel.guild.id]:
                     await channel.send("Stop typing, {0.mention}".format(user))
             except Exception:
                 pass
