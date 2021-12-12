@@ -143,6 +143,11 @@ class ApplicationCommand(abc.ABC):
                 await self.bot.http.delete_guild_command(self.bot.user.id, guild, data.id)
             logging.info(f"Removed a {self.__class__.__name__}:\n {data}")
 
+    def pre_check(self, interaction: nextcord.Interaction):
+        if "admin_locked_servers" in self.bot.global_data and interaction.guild_id in self.bot.global_data["admin_locked_servers"]:
+            if not interaction.user.guild_permissions.administrator:
+                raise commands.CheckFailure("This server has locked all commands to administrators.")
+
     @abc.abstractmethod
     async def invoke(self, interaction: nextcord.Interaction):
         raise NotImplementedError
@@ -237,6 +242,7 @@ class ApplicationCommandHandler(InteractionHandler, _type=nextcord.InteractionTy
         if command is None:
             return
         try:
+            command.pre_check(self.interaction)
             return await command.invoke(self.interaction)
         except CheckFailure:
             if self.interaction.response.is_done():

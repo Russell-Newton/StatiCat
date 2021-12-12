@@ -42,7 +42,6 @@ class Rude(CogWithData):
             await ctx.send("I can't mimic myself.")
             return
         self.data["mimic"].append(target.id)
-        self.update_data_file()
 
         await ctx.send("{0.mention} <3".format(target))
 
@@ -50,7 +49,6 @@ class Rude(CogWithData):
     async def mimic_remove(self, ctx, target: Union[nextcord.Member, nextcord.User]):
         """Remove someone from the list of targets"""
         self.data["mimic"].remove(target.id)
-        self.update_data_file()
 
         await ctx.send("You're off the hook for now, {0.mention}.".format(target))
 
@@ -58,7 +56,6 @@ class Rude(CogWithData):
     async def mimic_clear(self, ctx):
         """Clear the list of targets"""
         self.data["mimic"] = []
-        self.update_data_file()
 
         await ctx.send("I'll stop now.")
 
@@ -69,7 +66,6 @@ class Rude(CogWithData):
             await ctx.send("I can't silence myself.")
             return
         self.data["silence"].append(target.id)
-        self.update_data_file()
 
         await ctx.send("{0.mention} <3".format(target))
 
@@ -91,7 +87,6 @@ class Rude(CogWithData):
     async def silence_remove(self, ctx, target: Union[nextcord.Member, nextcord.User]):
         """Remove someone from the list of targets"""
         self.data["silence"].remove(target.id)
-        self.update_data_file()
 
         await ctx.send("You're off the hook for now, {0.mention}.".format(target))
 
@@ -99,7 +94,6 @@ class Rude(CogWithData):
     async def silence_clear(self, ctx):
         """Clear the list of targets"""
         self.data["silence"] = []
-        self.update_data_file()
 
         await ctx.send("I'll stop now.")
 

@@ -3,8 +3,6 @@ from typing import List
 import nextcord
 import nextcord.ext.commands as commands
 
-from universals import get_owner_data
-
 
 class NoPermissionError(commands.CheckFailure):
     pass
@@ -68,7 +66,7 @@ def is_owner_or_whitelist():
     """
 
     async def predicate(ctx: commands.Context):
-        if await ctx.bot.is_owner(ctx.author) or ctx.author.id in get_owner_data()["special command whitelist"]:
+        if await ctx.bot.is_owner(ctx.author) or ctx.author.id in ctx.bot.owner_data["special command whitelist"]:
             return True
         return False
 

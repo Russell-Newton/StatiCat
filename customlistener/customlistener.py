@@ -57,7 +57,6 @@ class CustomListener(CogWithData):
         if str(ctx.guild.id) not in self.data:
             self.data[str(ctx.guild.id)] = {}
         self.data[str(ctx.guild.id)][name] = listener
-        self.update_data_file()
 
         if isinstance(ctx, SlashInteractionAliasContext):
             await ctx.send(f"Added a new custom listener to the {'channel' if channel_specific else 'server'}!\n> Name: {name}\n> Trigger: {keyword.lower()}\n> Reaction: {reaction}")
@@ -74,7 +73,6 @@ class CustomListener(CogWithData):
         """
         try:
             del self.data[str(ctx.guild.id)][name]
-            self.update_data_file()
             await ctx.send("Removed the listener called {}!".format(name))
         except KeyError:
             await ctx.send("There isn't a listener named {} for this server.".format(name))

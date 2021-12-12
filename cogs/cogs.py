@@ -10,7 +10,6 @@ import traceback
 import nextcord.ext.commands as commands
 
 from bot import Embedinator, StatiCat
-from universals import get_global_data, save_global_data
 
 
 class Cogs(commands.Cog):
@@ -18,7 +17,7 @@ class Cogs(commands.Cog):
         """
         Commands for managing cogs.
         """
-        self.bot: commands.Bot = bot
+        self.bot: StatiCat = bot
         self.embedinator = Embedinator(**{"title": "**Cogs**"})
 
     @commands.is_owner()
@@ -158,19 +157,14 @@ class Cogs(commands.Cog):
             await ctx.send(embed=embed)
         self.embedinator.clear()
 
-    @staticmethod
-    def remove_cog_from_data(cog_name):
-        get_global_data()["loaded cogs"].remove(cog_name)
-        save_global_data()
+    def remove_cog_from_data(self, cog_name):
+        self.bot.global_data["loaded cogs"].remove(cog_name)
 
-    @staticmethod
-    def add_cog_to_data(cog_name):
+    def add_cog_to_data(self, cog_name):
         if cog_name == "Interactions":
-            get_global_data()["loaded cogs"].append(cog_name)
+            self.bot.global_data["loaded cogs"].append(cog_name)
         else:
-            get_global_data()["loaded cogs"].insert(-1, cog_name)
-
-        save_global_data()
+            self.bot.global_data["loaded cogs"].insert(-1, cog_name)
 
     @staticmethod
     def _cleanup_and_refresh_modules(module_name: str) -> None:

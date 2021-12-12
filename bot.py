@@ -14,8 +14,8 @@ from random import choice
 import nextcord
 import nextcord.ext.commands as commands
 
+from autosavedict import AutoSavingDict
 from checks import NoPermissionError
-from universals import get_prefixes, get_owner_data, get_global_data, get_color_palette
 
 
 def restart_after_shutdown():
@@ -89,14 +89,15 @@ class Embedinator(commands.Paginator):
 
 
 class EmbeddingHelpCommand(commands.HelpCommand):
-    def __init__(self, **options):
+    def __init__(self, color_palette, **options):
         super().__init__(**options)
+        self.bot = bot
         self.width: int = options.pop('width', 100)
         self.indent: int = options.pop('indent', 2)
         self.dm_help_threshold: int = options.pop('dm_help_threshold', 2000)
         self.no_category: str = "Miscellaneous"
         self.embedinator: Embedinator = Embedinator(**options)
-        self.palette = get_color_palette()
+        self.color_palette = color_palette
 
     async def send_pages(self, **options):
         destination = self.get_destination()
@@ -165,7 +166,7 @@ class EmbeddingHelpCommand(commands.HelpCommand):
             _commands = sorted(_commands, key=lambda c: c.name)
             self.add_command_block(category, tuple(_commands))
 
-        await self.send_pages(color=self.palette[0])
+        await self.send_pages(color=self.color_palette[0])
 
     async def send_cog_help(self, cog):
         filtered = await self.filter_commands(cog.get_commands(), sort=True)
@@ -173,7 +174,7 @@ class EmbeddingHelpCommand(commands.HelpCommand):
             self.embedinator.add_line(cog.description)
         self.add_command_block("__**Commands:**__", filtered)
 
-        await self.send_pages(color=self.palette[7])
+        await self.send_pages(color=self.color_palette[7])
 
     async def send_group_help(self, group):
         self.add_command_syntax(group)
@@ -181,12 +182,12 @@ class EmbeddingHelpCommand(commands.HelpCommand):
         filtered = await self.filter_commands(group.commands, sort=True)
         self.add_command_block("__**Subcommands:**__", filtered)
 
-        await self.send_pages(color=self.palette[9])
+        await self.send_pages(color=self.color_palette[9])
 
     async def send_command_help(self, command):
         self.add_command_syntax(command)
         self.embedinator.close_page()
-        await self.send_pages(color=self.palette[9])
+        await self.send_pages(color=self.color_palette[9])
 
     async def prepare_help_command(self, ctx, command=None):
         self.embedinator.clear()
@@ -195,11 +196,13 @@ class EmbeddingHelpCommand(commands.HelpCommand):
 
 class StatiCat(commands.Bot):
     def __init__(self, **options):
-        super().__init__(command_prefix=get_prefixes, **options)
-
         # This should never be set to true without shutting down the bot
         self.should_restart = False
         self.send_startup_message_to_owner = False
+        self.global_data = AutoSavingDict("global_data.json")
+        self.owner_data = AutoSavingDict("owner_data.json")
+
+        super().__init__(command_prefix=self.get_prefixes(), **options)
 
     @staticmethod
     def get_invite_link():
@@ -210,11 +213,17 @@ class StatiCat(commands.Bot):
     def print_invite_link():
         print(f'Invite me! {StatiCat.get_invite_link()}')
 
+    def get_prefixes(self):
+        return self.global_data["prefixes"]
+
+    def get_color_palette(self) -> List[nextcord.Color]:
+        hexes = self.global_data["color palette"]
+        return [nextcord.Color(int(hex_val, 0)) for hex_val in hexes]
 
     async def load_cogs(self):
         print("Loading cogs...")
         logging.info("Loading cogs...")
-        _cogs = get_global_data()["loaded cogs"]
+        _cogs = self.global_data["loaded cogs"]
         for cog in _cogs:
             try:
                 await self._load_cog_silent(cog)
@@ -265,7 +274,7 @@ class StatiCat(commands.Bot):
         logging.info(f"Logged in as {self.user}")
 
         await self.load_cogs()
-        self.help_command = EmbeddingHelpCommand(**{"title": "{} Help Menu".format(self.user.name)})
+        self.help_command = EmbeddingHelpCommand(self.get_color_palette(), **{"title": "{} Help Menu".format(self.user.name)})
         self.print_invite_link()
         await self.change_presence(activity=nextcord.Game(name="Type s!help for help!"))
 
@@ -302,8 +311,11 @@ class StatiCat(commands.Bot):
 
     async def invoke(self, ctx: commands.Context):
         if ctx.command is not None:
-            if get_global_data()["deny odds"] != 0 and choice(range(get_global_data()["deny odds"])) == 0:
-                await ctx.send(choice(get_global_data()["deny choices"]))
+            if "admin_locked_servers" in self.global_data and ctx.guild.id in self.global_data["admin_locked_servers"]:
+                if not ctx.author.guild_permissions.administrator:
+                    raise commands.CheckFailure("This server has locked all commands to administrators.")
+            if self.global_data["deny odds"] != 0 and choice(range(self.global_data["deny odds"])) == 0:
+                await ctx.send(choice(self.global_data["deny choices"]))
                 return
         return await super().invoke(ctx)
 
@@ -342,6 +354,6 @@ if __name__ == '__main__':
 
     logging.info(sys.argv)
 
-    bot.run(get_owner_data()["Token"])
+    bot.run(bot.owner_data["Token"])
     if bot.should_restart:
         restart_after_shutdown()

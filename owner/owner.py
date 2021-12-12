@@ -6,7 +6,6 @@ import nextcord
 import nextcord.ext.commands as commands
 
 from bot import StatiCat
-from universals import _global_data, save_global_data
 from checks import is_owner_or_whitelist
 
 
@@ -25,10 +24,9 @@ class Owner(commands.Cog):
         Sets the odds to deny a user's command request. Set to 0 to disable. Setting to 1 will require manual change and override.
         """
         if odds is None:
-            await ctx.send("The current deny odds is 1:" + str(_global_data["deny odds"]))
+            await ctx.send("The current deny odds is 1:" + str(self.bot.global_data["deny odds"]))
             return
-        _global_data["deny odds"] = odds
-        save_global_data()
+        self.bot.global_data["deny odds"] = odds
         await ctx.send(f"Set the deny odds to 1:{odds}")
 
     @commands.is_owner()
