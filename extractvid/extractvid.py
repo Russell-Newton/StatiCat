@@ -4,6 +4,7 @@ import random
 import re
 import io
 import string
+import codecs
 from typing import Dict, Tuple, Pattern, Callable, Optional, Awaitable
 
 import aiohttp
@@ -21,7 +22,9 @@ from selenium import webdriver
 from bot import StatiCat
 
 
-TIKTOK_FAILED_EXTRACT = "TikTok Fail"
+TIKTOK_FAILED_EXTRACT = "Couldn't extract full link from small link"
+TIKTOK_FAILED_DOWNLOADADDR = "Couldn't find the downloadAddr in the page data"
+TIKTOK_FAILED_ENDLINK = "Couldn't find the end of the downloadAddr"
 
 
 def get_tiktok_cookies():
@@ -61,6 +64,8 @@ class ExtractVid(commands.Cog):
                 data = await v[1](link)
                 if data is None:
                     await ctx.send("Could not get your video :(")
+                elif data in (TIKTOK_FAILED_EXTRACT, TIKTOK_FAILED_DOWNLOADADDR, TIKTOK_FAILED_ENDLINK):
+                    await ctx.reply(f"I couldn't get that video from TikTok ({data}). Try a second time or with the long link :)")
                 else:
                     file = nextcord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4')
                     await ctx.send(file=file)
@@ -100,15 +105,24 @@ class ExtractVid(commands.Cog):
 
         with requests.get(full_link, headers=headers, proxies=None, cookies=cookies) as r:
             html = r.text
-            nonce_start = '<head nonce="'
-            nonce_end = '">'
-            nonce = html.split(nonce_start)[1].split(nonce_end)[0]
-            j_raw = html.split(
-                '<script id="__NEXT_DATA__" type="application/json" nonce="%s" crossorigin="anonymous">'
-                % nonce
-            )[1].split("</script>")[0]
+            # nonce_start = '<head nonce="'
+            # nonce_end = '">'
+            # nonce = html.split(nonce_start)[1].split(nonce_end)[0]
+            # j_raw = html.split(
+            #     '<script id="__NEXT_DATA__" type="application/json" nonce="%s" crossorigin="anonymous">'
+            #     % nonce
+            # )[1].split("</script>")[0]
+            # src = json.loads(j_raw)["props"]["pageProps"]["itemInfo"]["itemStruct"]["video"]["downloadAddr"]
 
-            src = json.loads(j_raw)["props"]["pageProps"]["itemInfo"]["itemStruct"]["video"]["downloadAddr"]
+            try:
+                src_raw = html.split("\"downloadAddr\":\"")[1]
+            except IndexError:
+                return TIKTOK_FAILED_EXTRACT
+            try:
+                src_raw = src_raw.split("\",")[0]
+            except IndexError:
+                return TIKTOK_FAILED_ENDLINK
+            src = codecs.decode(src_raw, "unicode-escape")
 
         headers = {
             "Accept": "*/*",
@@ -168,9 +182,9 @@ class ExtractVid(commands.Cog):
         for k, v in self.pattern_map.items():
             if ExtractVid._validate_link_format(content, v[0]):
                 data = await v[1](content)
-                if data is TIKTOK_FAILED_EXTRACT:
-                    await message.reply(f"I couldn't get that video from TikTok, the API is janky. Try a second time or with the long link :)")
-                if data is not None:
+                if data in (TIKTOK_FAILED_EXTRACT, TIKTOK_FAILED_DOWNLOADADDR, TIKTOK_FAILED_ENDLINK):
+                    await message.reply(f"I couldn't get that video from TikTok ({data}). Try a second time or with the long link :)")
+                elif data is not None:
                     video = nextcord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4')
                     try:
                         await channel.send(
