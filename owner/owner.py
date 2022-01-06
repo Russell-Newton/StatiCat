@@ -34,13 +34,13 @@ class Owner(commands.Cog):
     async def throw_error(self, ctx: commands.Context):
         raise TestException("This is a test.")
 
-    # @commands.is_owner()
-    # @commands.command(name="shutdown")
+    @commands.is_owner()
+    @commands.command(name="shutdown")
     async def shutdown_no_restart(self, ctx: commands.Context):
         await ctx.send('Are you sure? React with 👍 to confirm.')
 
         try:
-            reaction, user = await self.bot.wait_for('reaction_add', timeout=30, check=self.approval_check)
+            event: nextcord.RawReactionActionEvent = await self.bot.wait_for('raw_reaction_add', timeout=30, check=self.approval_check)
         except asyncio.TimeoutError:
             await ctx.send("Shutdown request cancelled.")
         else:
@@ -49,13 +49,16 @@ class Owner(commands.Cog):
             await self.bot.close()
             self.bot.loop.stop()
 
-    # @commands.is_owner()
-    # @commands.command(name="restart")
+    @commands.is_owner()
+    @commands.command(name="restart")
     async def shutdown_restart(self, ctx: commands.Context):
+        """
+        This doesn't work when the bot is run in a PyCharm run configuration
+        """
         await ctx.send('Are you sure? React with 👍 to confirm.')
 
         try:
-            reaction, user = await self.bot.wait_for('reaction_add', timeout=30, check=self.approval_check)
+            event: nextcord.RawReactionActionEvent = await self.bot.wait_for('raw_reaction_add', timeout=30, check=self.approval_check)
         except asyncio.TimeoutError:
             await ctx.send("Restart request cancelled.")
         else:
@@ -73,5 +76,5 @@ class Owner(commands.Cog):
         """
         await ctx.send(getattr(self.bot, attribute))
 
-    def approval_check(self, reaction: nextcord.Reaction, user: nextcord.User):
-        return user.id == self.bot.owner_id and str(reaction.emoji) == '👍'
+    def approval_check(self, event: nextcord.RawReactionActionEvent):
+        return event.user_id == self.bot.owner_id and event.emoji.name in ('👍', 'thumbsup')

@@ -20,8 +20,9 @@ from checks import NoPermissionError
 
 def restart_after_shutdown():
     logging.warning("Shutdown complete. Attempting to restart...")
-    python = sys.executable
-    os.execl(python, python, *sys.argv + ["--messageowner"])
+    if "--messageowner" not in sys.argv:
+        sys.argv.append("--messageowner")
+    os.execv(sys.executable, ['python'] + sys.argv)
 
 
 class Embedinator(commands.Paginator):
@@ -310,7 +311,7 @@ class StatiCat(commands.Bot):
                     error.__class__.__name__, error.__cause__.__class__.__name__, ctx.prefix))
 
     async def invoke(self, ctx: commands.Context):
-        if ctx.command is not None:
+        if ctx.command is not None and ctx.guild:
             if "admin_locked_servers" in self.global_data and ctx.guild.id in self.global_data["admin_locked_servers"]:
                 if not ctx.author.guild_permissions.administrator:
                     raise commands.CheckFailure("This server has locked all commands to administrators.")
@@ -320,7 +321,8 @@ class StatiCat(commands.Bot):
         return await super().invoke(ctx)
 
     async def message_owner(self, message: str):
-        await self.get_user(self.owner_id).send(message)
+        owner: nextcord.User = await self.fetch_user(self.owner_id)
+        await owner.send(message)
 
 
 if __name__ == '__main__':
