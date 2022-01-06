@@ -17,7 +17,7 @@ class Dad(CogWithData):
         self.bot = bot
         super().__init__("imdadblacklist")
         self.funny_chance = 0.04
-        self.dad_chance = 0.25
+        self.dad_chance = 0.15
 
     @commands.command()
     async def dadjoke(self, ctx):
