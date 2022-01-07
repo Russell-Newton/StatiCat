@@ -25,6 +25,17 @@ def restart_after_shutdown():
     os.execv(sys.executable, ['python'] + sys.argv)
 
 
+def clean_files():
+    files = os.listdir("_logs")
+    full_path = ["_logs/{0}".format(x) for x in files]
+
+    time_sorted = sorted(full_path, key=os.path.getctime, reverse=True)
+
+    while len(time_sorted) >= 15:
+        oldest_file = time_sorted.pop()
+        os.remove(oldest_file)
+
+
 class Embedinator(commands.Paginator):
     """
     Can be used to create custom embeds.
@@ -337,6 +348,8 @@ if __name__ == '__main__':
                         action='store_true')
 
     args = parser.parse_args()
+
+    clean_files()
 
     numeric_level = getattr(logging, args.loglevel.upper(), None)
     if not isinstance(numeric_level, int):
