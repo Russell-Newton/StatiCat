@@ -11,11 +11,11 @@ import aiohttp
 import nextcord
 
 import nextcord.ext.commands as commands
+import selenium.common.exceptions
 from bs4 import BeautifulSoup
 from datetime import datetime
 import requests
 from fake_useragent import UserAgent
-from msedge.selenium_tools import Edge, EdgeOptions
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium import webdriver
 
@@ -25,6 +25,7 @@ from bot import StatiCat
 TIKTOK_FAILED_EXTRACT = "Couldn't extract full link from small link"
 TIKTOK_FAILED_DOWNLOADADDR = "Couldn't find the downloadAddr in the page data"
 TIKTOK_FAILED_ENDLINK = "Couldn't find the end of the downloadAddr"
+WEBDRIVER_SESSION_FAILED = "Cached webdriver is out of date"
 
 
 def get_tiktok_cookies():
@@ -159,8 +160,11 @@ class ExtractVid(commands.Cog):
         options.add_argument(
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36")
         options.add_argument("--disable-gpu")
-        browser = webdriver.Chrome(executable_path=ChromeDriverManager(log_level=0, print_first_line=False).install(),
-                                   options=options)
+        try:
+            browser = webdriver.Chrome(executable_path=ChromeDriverManager(log_level=0, print_first_line=False).install(),
+                                       options=options)
+        except selenium.common.exceptions.SessionNotCreatedException:
+            return WEBDRIVER_SESSION_FAILED
 
         browser.get(link)
 

@@ -4,10 +4,10 @@
 
 To install/update requirements into an Anaconda environment:
 ```shell
-pip install -r requirements\dev.txt
+pip install -r requirements.txt
 ```
 
-Documentation will come later.
+### TODO: Make better documentation :)
 
 ## Thanks to the following APIs:
 * [15.ai](https://15.ai)
@@ -20,7 +20,7 @@ Documentation will come later.
     * Used for Cog "Fry"
 * https://github.com/AliaksandrSiarohin/first-order-model
     * Used for Cog "DeepFake"
-    * Make sure you download vox-cpk.pth.tar and vox-adv-cpk.pth.tar and put them in deepfake/!
+    * Make sure you download vox-cpk.pth.tar and vox-adv-cpk.pth.tar and put them in `deepfake/`!
         * https://mega.nz/file/4cAyTIpT#5c5n43cLo4xc_uSgyBMIxMLB1S3_tNtzeiEZALnIyyc
         * https://mega.nz/file/MNJw3ASA#ykp34kcenxKAEoTAW6__UhSrkxdchzqBq2p6qSzCkLE
 

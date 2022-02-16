@@ -156,7 +156,7 @@ class CustomListener(CogWithData):
 
 
     def check_message(self, method: str, keyword: str, message: nextcord.Message):
-        pattern_string = r'(?P<key>' + keyword + r')'
+        pattern_string = r'\b(?P<key>' + keyword + r')\b'
         if method == self.method_options[0]:
             pattern = re.compile(pattern_string, re.IGNORECASE)
         elif method == self.method_options[1]:
