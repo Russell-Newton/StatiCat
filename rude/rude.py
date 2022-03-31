@@ -1,6 +1,8 @@
 import logging
 import os
-from random import choice
+import re
+import traceback
+from random import choice, random
 from typing import Union
 import subprocess
 
@@ -20,6 +22,7 @@ class Rude(CogWithData):
         super().__init__("targets")
         self.beta_male_video = self.get_path("beta_male.mov")
         self.beta_male_audio = self.get_path("beta_male_audio.mov")
+        self.counter_ratio_chance = 0.05
 
     @check_permissions(['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members'], False)
     @commands.group(name="mimic", pass_context=True)
@@ -141,28 +144,47 @@ class Rude(CogWithData):
             out += choice(choices)(char)
         return out
 
+    def check_ratio(self, message: nextcord.Message):
+        pattern = re.compile(r'\b(?:ratio|ratiod|ratioed)\b', re.IGNORECASE)
+        return pattern.search(message.content) is not None
+
+
     @commands.Cog.listener()
     async def on_message(self, message: nextcord.Message):
-        if message.author.id is not self.bot.user.id:
+        if message.author.id != self.bot.user.id:
             try:
-                if message.author.id in self.data["mimic"][message.guild.id]:
-                    await message.channel.send(self.spongebobify(message))
-                if message.author.id in self.data["silence"][message.guild.id]:
-                    try:
-                        await message.delete()
-                    except nextcord.Forbidden:
-                        await message.channel.send(self.get_silence_message(message))
-            except Exception:
-                pass
+                if message.guild is not None:
+                    if message.guild.id in self.data["silence"]:
+                        if message.author.id in self.data["silence"][message.guild.id]:
+                            try:
+                                await message.delete()
+                            except nextcord.Forbidden:
+                                await message.channel.send(self.get_silence_message(message))
+                            return
+                    if message.guild.id in self.data["mimic"]:
+                        if message.author.id in self.data["mimic"][message.guild.id]:
+                            await message.channel.send(self.spongebobify(message))
+                            return
+                if self.check_ratio(message):
+                    if random() < self.counter_ratio_chance:
+                        sent_message = await message.reply("\@here let's ratio this bozo")
+                        await sent_message.add_reaction("⬆")
+                    else:
+                        await message.add_reaction("⬆")
+            except Exception as error:
+                traceback.print_exception(type(error), error, error.__traceback__)
+                logging.error("Error in rude.", exc_info=(type(error), error, error.__traceback__))
 
     @commands.Cog.listener()
     async def on_typing(self, channel: nextcord.TextChannel, user: Union[nextcord.User, nextcord.Member], when):
         if user.id is not self.bot.user.id:
             try:
-                if user.id in self.data["silence"][channel.guild.id]:
-                    await channel.send("Stop typing, {0.mention}".format(user))
-            except Exception:
-                pass
+                if channel.guild.id in self.data["silence"]:
+                    if user.id in self.data["silence"][channel.guild.id]:
+                        await channel.send("Stop typing, {0.mention}".format(user))
+            except Exception as error:
+                traceback.print_exception(type(error), error, error.__traceback__)
+                logging.error("Error in rude.", exc_info=(type(error), error, error.__traceback__))
 
     @interactions.slash_command(name="betamale")
     async def beta_male_shadow(self, interaction: nextcord.Interaction, name: str):
