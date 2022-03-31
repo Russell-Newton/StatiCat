@@ -4,6 +4,8 @@
 
 To install/update requirements into an Anaconda environment:
 ```shell
+pip install -U pip-tools
+pip-compile --upgrade
 pip install -r requirements.txt
 ```
 

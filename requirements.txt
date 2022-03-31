@@ -4,47 +4,49 @@
 #
 #    pip-compile
 #
-aiohttp==3.7.4.post0
+aiohttp==3.8.1
     # via nextcord
-async-timeout==3.0.1
+aiosignal==1.2.0
     # via aiohttp
-attrs==21.2.0
+async-timeout==4.0.2
+    # via aiohttp
+attrs==21.4.0
     # via aiohttp
 beautifulsoup4==4.10.0
     # via wikipedia
 certifi==2021.10.8
     # via requests
-chardet==4.0.0
-    # via aiohttp
-charset-normalizer==2.0.7
-    # via requests
-cmake==3.21.3
+charset-normalizer==2.0.12
+    # via
+    #   aiohttp
+    #   requests
+cmake==3.22.3
     # via -r requirements.in
 colorama==0.4.4
-    # via
-    #   crayons
-    #   tqdm
-comtypes==1.1.10
+    # via tqdm
+comtypes==1.1.11
     # via pyttsx3
-configparser==5.0.2
-    # via webdriver-manager
-crayons==0.4.0
-    # via webdriver-manager
-cycler==0.10.0
+cycler==0.11.0
     # via matplotlib
-dlib==19.22.1
+dlib==19.23.1
     # via -r requirements.in
 fake-useragent==0.1.11
     # via -r requirements.in
 ffmpeg-python==0.2.0
     # via -r requirements.in
+fonttools==4.31.2
+    # via matplotlib
+frozenlist==1.3.0
+    # via
+    #   aiohttp
+    #   aiosignal
 future==0.18.2
     # via ffmpeg-python
 idna==3.3
     # via
     #   requests
     #   yarl
-imageio==2.9.0
+imageio==2.16.1
     # via
     #   -r requirements.in
     #   scikit-image
@@ -54,27 +56,25 @@ imutils==0.5.4
     # via -r requirements.in
 joblib==1.1.0
     # via scikit-learn
-kiwisolver==1.3.2
+kiwisolver==1.4.2
     # via matplotlib
-lxml==4.6.3
+lxml==4.8.0
     # via -r requirements.in
-matplotlib==3.4.3
-    # via
-    #   -r requirements.in
-    #   scikit-image
-msedge-selenium-tools==3.141.3
+matplotlib==3.5.1
     # via -r requirements.in
-multidict==5.2.0
+msedge-selenium-tools==3.141.4
+    # via -r requirements.in
+multidict==6.0.2
     # via
     #   aiohttp
     #   yarl
-networkx==2.6.3
+networkx==2.7.1
     # via
     #   -r requirements.in
     #   scikit-image
-nextcord==2.0.0a3
+nextcord==2.0.0a10
     # via -r requirements.in
-numpy==1.21.2
+numpy==1.22.3
     # via
     #   -r requirements.in
     #   imageio
@@ -87,19 +87,25 @@ numpy==1.21.2
     #   scipy
     #   tifffile
     #   torchvision
-opencv-python==4.5.3.56
+opencv-python==4.5.5.64
     # via -r requirements.in
-pandas==1.3.3
+packaging==21.3
+    # via
+    #   matplotlib
+    #   scikit-image
+pandas==1.4.1
     # via -r requirements.in
-pillow==8.4.0
+pillow==9.0.1
     # via
     #   -r requirements.in
     #   imageio
     #   matplotlib
     #   scikit-image
     #   torchvision
-pyparsing==2.4.7
-    # via matplotlib
+pyparsing==3.0.7
+    # via
+    #   matplotlib
+    #   packaging
 pypiwin32==223
     # via pyttsx3
 python-dateutil==2.8.2
@@ -108,25 +114,26 @@ python-dateutil==2.8.2
     #   pandas
 pyttsx3==2.90
     # via -r requirements.in
-pytz==2021.3
+pytz==2022.1
     # via pandas
-pywavelets==1.1.1
+pywavelets==1.3.0
     # via scikit-image
-pywin32==302
+pywin32==303
     # via
     #   pypiwin32
     #   pyttsx3
 pyyaml==6.0
     # via -r requirements.in
-requests==2.26.0
+requests==2.27.1
     # via
+    #   torchvision
     #   webdriver-manager
     #   wikipedia
-scikit-image==0.18.3
+scikit-image==0.19.2
     # via -r requirements.in
-scikit-learn==1.0
+scikit-learn==1.0.2
     # via -r requirements.in
-scipy==1.7.1
+scipy==1.8.0
     # via
     #   -r requirements.in
     #   scikit-image
@@ -134,32 +141,30 @@ scipy==1.7.1
 selenium==3.141
     # via msedge-selenium-tools
 six==1.16.0
-    # via
-    #   cycler
-    #   python-dateutil
-soupsieve==2.2.1
+    # via python-dateutil
+soupsieve==2.3.1
     # via beautifulsoup4
-threadpoolctl==3.0.0
+threadpoolctl==3.1.0
     # via scikit-learn
-tifffile==2021.10.12
+tifffile==2022.3.25
     # via scikit-image
-torch==1.9.1
+torch==1.11.0
     # via torchvision
-torchvision==0.10.1
+torchvision==0.12.0
     # via -r requirements.in
-tqdm==4.62.3
+tqdm==4.63.1
     # via -r requirements.in
-typing-extensions==3.10.0.2
+typing-extensions==4.1.1
     # via
-    #   aiohttp
     #   torch
-urllib3==1.26.7
+    #   torchvision
+urllib3==1.26.9
     # via
     #   requests
     #   selenium
-webdriver-manager==3.5.1
+webdriver-manager==3.5.4
     # via -r requirements.in
 wikipedia==1.4.0
     # via -r requirements.in
-yarl==1.7.0
+yarl==1.7.2
     # via aiohttp

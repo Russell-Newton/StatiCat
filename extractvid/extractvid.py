@@ -5,6 +5,7 @@ import re
 import io
 import string
 import codecs
+import traceback
 from typing import Dict, Tuple, Pattern, Callable, Optional, Awaitable
 
 import aiohttp
@@ -47,7 +48,7 @@ class ExtractVid(commands.Cog):
         self.pattern_map: Dict[str, Tuple[Pattern,
                                           Callable[[str], Awaitable[Optional[io.BytesIO]]]]] = {
             "ifunny": (re.compile("^https://ifunny.co/video/..+$"), self.extract_from_ifunny),
-            "tiktok": (re.compile("^https://vm.tiktok.com/[a-zA-Z0-9]+/$"), self.extract_from_tiktok),
+            "tiktok": (re.compile("^https://vm.tiktok.com/[a-zA-Z0-9]+/\S*$"), self.extract_from_tiktok),
             "tiktoklong": (
             re.compile("^https://www.tiktok.com/@[a-zA-Z0-9_.]+/video/[0-9]+\S*$"), self.extract_from_tiktok_long)
         }
@@ -161,9 +162,12 @@ class ExtractVid(commands.Cog):
             "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36")
         options.add_argument("--disable-gpu")
         try:
-            browser = webdriver.Chrome(executable_path=ChromeDriverManager(log_level=0, print_first_line=False).install(),
+            browser = webdriver.Chrome(executable_path=ChromeDriverManager(#version="100.0.4896.60",
+                                                                           log_level=0,
+                                                                           print_first_line=False).install(),
                                        options=options)
-        except selenium.common.exceptions.SessionNotCreatedException:
+        except selenium.common.exceptions.SessionNotCreatedException as error:
+            traceback.print_exception(type(error), error, error.__traceback__)
             return WEBDRIVER_SESSION_FAILED
 
         browser.get(link)
@@ -188,6 +192,8 @@ class ExtractVid(commands.Cog):
                 data = await v[1](content)
                 if data in (TIKTOK_FAILED_EXTRACT, TIKTOK_FAILED_DOWNLOADADDR, TIKTOK_FAILED_ENDLINK):
                     await message.reply(f"I couldn't get that video from TikTok ({data}). Try a second time or with the long link :)")
+                elif data in (WEBDRIVER_SESSION_FAILED,):
+                    await message.reply(f"I couldn't get that video for you ({data}). <@{self.bot.owner_id}> if you're here, check this out and fix it please :)")
                 elif data is not None:
                     video = nextcord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4')
                     try:
