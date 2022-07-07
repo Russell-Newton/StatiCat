@@ -78,3 +78,15 @@ class Owner(commands.Cog):
 
     def approval_check(self, event: nextcord.RawReactionActionEvent):
         return event.user_id == self.bot.owner_id and event.emoji.name in ('👍', 'thumbsup')
+
+    @commands.is_owner()
+    @commands.command(name="listappcomms")
+    async def list_deployed_commands(self, ctx: commands.Context):
+        for command in self.bot.get_application_commands(True):
+            await ctx.send(str(command.get_rollout_signatures()))
+
+    @commands.is_owner()
+    @commands.command(name="syncappcomms")
+    async def resync_app_commands(self, ctx: commands.Context):
+        await self.bot.sync_all_application_commands()
+        await ctx.send("Done!")

@@ -34,6 +34,7 @@ class SlashInteractionAliasContext(commands.Context):
         self.command_failed: bool = False
         self.current_parameter: Optional[inspect.Parameter] = None
         self._state: ConnectionState = self.interaction._state
+        self._has_deferred = False
 
     @nextcord.utils.cached_property
     def guild(self) -> Optional[Guild]:
@@ -70,7 +71,9 @@ class SlashInteractionAliasContext(commands.Context):
             ephemeral: bool = False,
             **kwargs
     ):
-
+        if not self._has_deferred:
+            await self.interaction.response.defer()
+            self._has_deferred = True
         return await self.interaction.followup.send(
             content=content,
             embed=embed,
@@ -80,3 +83,7 @@ class SlashInteractionAliasContext(commands.Context):
             ephemeral=ephemeral,
             **kwargs
         )
+
+    async def defer(self):
+        await self.interaction.response.defer()
+        self._has_deferred = True

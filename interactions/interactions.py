@@ -28,7 +28,6 @@ slash_command_option_type_map = {
     nextcord.VoiceChannel: 7,
     nextcord.GroupChannel: 7,
     nextcord.CategoryChannel: 7,
-    nextcord.StoreChannel: 7,
     nextcord.StageChannel: 7,
     nextcord.Thread: 7,
     nextcord.Role: 8,
@@ -494,19 +493,6 @@ class Interactions(CogWithData):
             return await self.bot.http.get_guild_commands(self.bot.user.id, guild_id)
         except nextcord.errors.Forbidden:
             return []
-
-    @commands.is_owner()
-    @commands.command(name="listappcomms")
-    async def list_deployed_commands(self, ctx: commands.Context):
-        await ctx.send("GLOBAL APPLICATION COMMANDS:")
-        for item in await self.get_deployed_global_commands():
-            await ctx.send(str(item))
-        # await ctx.send(str(await self.get_deployed_global_commands()))
-        guild: nextcord.Guild = ctx.guild
-        if guild:
-            await ctx.send("THIS GUILD'S APPLICATION COMMANDS:")
-            for item in await self.get_deployed_guild_commands(guild.id):
-                await ctx.send(str(item))
 
     async def add_command(self, command: ApplicationCommand, sync: bool = True):
         self.commands[(command.command_name, command.application_command_type)] = command

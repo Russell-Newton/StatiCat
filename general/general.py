@@ -12,14 +12,14 @@ import nextcord
 import nextcord.ext.commands as commands
 from PIL import Image, ImageDraw
 from bs4 import BeautifulSoup
+from nextcord import slash_command
 from selenium.common.exceptions import WebDriverException, SessionNotCreatedException
 from msedge.selenium_tools import Edge, EdgeOptions
 
-import interactions
 from bot import StatiCat
 from checks import check_permissions
 from cogwithdata import CogWithData
-from interactions import command_also_slash_command
+from interactions import SlashInteractionAliasContext
 
 
 class UnavailablePokemonError(ValueError):
@@ -189,11 +189,14 @@ class General(CogWithData):
 
         return palette
 
-    @command_also_slash_command()
     @commands.command()
     async def invite(self, ctx):
         """Get a link to invite me to your server!"""
         await ctx.send(f'Invite me! {StatiCat.get_invite_link()}')
+
+    @slash_command()
+    async def invite(self, interaction: nextcord.Interaction):
+        return await self.invite(SlashInteractionAliasContext(interaction, self.bot))
 
     @commands.command(name="8ball")
     async def eight_ball(self, ctx):

@@ -1,10 +1,9 @@
 import nextcord
 import nextcord.ext.commands as commands
+from nextcord import slash_command
 
-import interactions
 from bot import StatiCat
 from checks import check_in_guild
-from interactions import command_also_slash_command
 
 
 class Say(commands.Cog):
@@ -42,7 +41,7 @@ class Say(commands.Cog):
         except nextcord.HTTPException:
             await ctx.send("Oops I had some trouble sending that.")
 
-    @interactions.slash_command(name="say")
+    @slash_command(name="say")
     async def say_slash(self, interaction: nextcord.Interaction, message, tts: bool = False):
         await interaction.response.send_message("Only you can see this", ephemeral=True)
         channel_id = interaction.channel_id
@@ -52,7 +51,7 @@ class Say(commands.Cog):
         else:
             await interaction.followup.send(message, tts=tts)
 
-    @interactions.slash_command(name="saybutton")
+    @slash_command(name="saybutton")
     async def bait_button_say(self,
                               interaction: nextcord.Interaction,
                               click_message: str,

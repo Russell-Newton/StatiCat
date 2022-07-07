@@ -18,6 +18,9 @@ from autosavedict import AutoSavingDict
 from checks import NoPermissionError
 
 
+bot = None
+
+
 def restart_after_shutdown():
     logging.warning("Shutdown complete. Attempting to restart...")
     if "--messageowner" not in sys.argv:
@@ -297,6 +300,8 @@ class StatiCat(commands.Bot):
             send_message_task = asyncio.create_task(self.message_owner("Up and running!"))
             await send_message_task
 
+        await self.sync_all_application_commands()
+
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.CheckFailure):
             traceback.print_exception(type(error), error, error.__traceback__)
@@ -361,6 +366,9 @@ if __name__ == '__main__':
                         datefmt='%m/%d/%Y %H:%M:%S')
 
     intents: nextcord.Intents = nextcord.Intents.default()
+    intents.members = True
+    intents.message_content = True
+    intents.presences = True
 
     bot = StatiCat(intents=intents)
 

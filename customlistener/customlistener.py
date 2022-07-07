@@ -1,32 +1,41 @@
-from typing import Union
+import logging
 import re
 
 import nextcord
 import nextcord.ext.commands as commands
+from nextcord import slash_command
 
 from bot import Embedinator, StatiCat
 from checks import check_permissions, check_in_guild, check_in_private
+import interactions_checks
 from cogwithdata import CogWithData
-from interactions import command_also_slash_command, SlashInteractionAliasContext
+from interactions import SlashInteractionAliasContext
 
 
 class CustomListener(CogWithData):
+    _perms_to_check = ['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members']
+
     def __init__(self, bot: StatiCat):
         self.bot = bot
         super().__init__("listeners")
         self.embedinator = Embedinator(**{"title": "**Custom Listeners**"})
         self.method_options = ["anywhere", "start", "end"]
 
-    @command_also_slash_command(name="listeners")
     @commands.check_any(
-        check_permissions(['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members'], False),
+        check_permissions(_perms_to_check, False),
         check_in_private())
     @commands.group(name="customlisteners", aliases=["listeners", "clist"])
     async def custom_listeners(self, ctx: commands.Context):
-        """Commands for managing custom listeners. Go into a server to see more commands."""
+        """Commands for managing custom listeners."""
         pass
 
-    @custom_listeners.__slash_command__.subcommand(name="add")
+    @interactions_checks.check_one(_perms_to_check)
+    @slash_command(name="listeners",
+                   dm_permission=False)
+    async def slash_custom_listeners(self, interaction: nextcord.Interaction):
+        """Commands for managing custom listeners."""
+        pass
+
     @check_in_guild()
     @custom_listeners.command(name="add")
     async def add_server(self, ctx: commands.Context, name: str, keyword: str, reaction: str,
@@ -37,7 +46,6 @@ class CustomListener(CogWithData):
         **keyword** What should I look for? Capitalization isn't important. If more than one word, surround with quotation marks. (ex. "Hello there!")
         **reaction** What should I say? If more than one word, surround with quotation marks. (ex. "General Kenobi!")
         **channel_specific** Should this reaction only exist for this channel? [True/False] (Defaults to False)
-        **method** Where should I look for the keyword? [anywhere/start/end or 0/1/2] (Defaults to anywhere)
         """
         method = 0
         if isinstance(method, int):
@@ -59,9 +67,24 @@ class CustomListener(CogWithData):
         self.data[str(ctx.guild.id)][name] = listener
 
         if isinstance(ctx, SlashInteractionAliasContext):
-            await ctx.send(f"Added a new custom listener to the {'channel' if channel_specific else 'server'}!\n> Name: {name}\n> Trigger: {keyword.lower()}\n> Reaction: {reaction}")
+            await ctx.send(
+                f"Added a new custom listener to the {'channel' if channel_specific else 'server'}!\n> Name: {name}\n> Trigger: {keyword.lower()}\n> Reaction: {reaction}")
 
-    @custom_listeners.__slash_command__.subcommand(name="remove")
+    @slash_custom_listeners.subcommand(name="add")
+    async def slash_add_server(self, interaction: nextcord.Interaction, name: str, keyword: str, reaction: str,
+                               channel_specific: bool = False):
+        """
+        Add a custom listener to the server.
+
+        :param name: The name of the reaction. This is important for removing and listing custom listeners.
+        :param keyword: What should I look for? Capitalization isn't important. If more than one word, surround with quotation marks. (ex. "Hello there!")
+        :param reaction: What should I say? If more than one word, surround with quotation marks. (ex. "General Kenobi!")
+        :param channel_specific: Should this reaction only exist for this channel? [True/False] (Defaults to False)
+        """
+        return await self.add_server(
+            SlashInteractionAliasContext(interaction, self.bot, [name, keyword, reaction, channel_specific]),
+            name, keyword, reaction, channel_specific)
+
     @check_in_guild()
     @custom_listeners.command(name="remove")
     async def remove_server(self, ctx: commands.Context, name: str):
@@ -69,7 +92,6 @@ class CustomListener(CogWithData):
         Remove a specific listener.
 
         Use the list command to find all of the listeners for this server.
-        **name** the name of the listener.
         """
         try:
             del self.data[str(ctx.guild.id)][name]
@@ -78,14 +100,23 @@ class CustomListener(CogWithData):
             await ctx.send("There isn't a listener named {} for this server.".format(name))
             return
 
-    @custom_listeners.__slash_command__.subcommand(name="list")
+    @slash_custom_listeners.subcommand(name="remove")
+    async def slash_remove_server(self, interaction: nextcord.Interaction, name: str):
+        """
+        Remove a specific listener.
+
+        Use the list command to find all of the listeners for this server.
+        :param name: The name of the reaction
+        """
+        return await self.remove_server(SlashInteractionAliasContext(interaction, self.bot, [name, ]), name)
+
     @check_in_guild()
     @custom_listeners.command(name="list")
     async def list_server(self, ctx: commands.Context):
         """
         List the listeners for this server, by name.
         """
-        prefix = self.bot.command_prefix(self.bot, None)
+        prefix = self.bot.command_prefix
         if isinstance(prefix, list):
             prefix = prefix[0]
         if str(ctx.guild.id) not in self.data:
@@ -101,7 +132,14 @@ class CustomListener(CogWithData):
             await ctx.send(embed=embed)
         self.embedinator.clear()
 
-    @custom_listeners.__slash_command__.subcommand(name="info")
+    @slash_custom_listeners.subcommand(name="list")
+    async def slash_list_server(self, interaction: nextcord.Interaction):
+        """
+        List the listeners for this server, by name.
+        """
+
+        return await self.list_server(SlashInteractionAliasContext(interaction, self.bot))
+
     @check_in_guild()
     @custom_listeners.command("info")
     async def info_server(self, ctx: commands.Context, name: str):
@@ -126,13 +164,19 @@ class CustomListener(CogWithData):
             await ctx.send(embed=embed)
         self.embedinator.clear()
 
-    @custom_listeners.__slash_command__.subcommand(name="help")
+    @slash_custom_listeners.subcommand(name="info")
+    async def slash_info_server(self, interaction: nextcord.Interaction, name: str):
+        """
+        Get info about a listener. Use the list subcommand to get a list of listeners.
+        """
+        return await self.info_server(SlashInteractionAliasContext(interaction, self.bot, [name, ]), name)
+
     @custom_listeners.command("help")
     async def help_server(self, ctx: commands.Context):
         """
         Helpful information about the CustomListeners suite.
         """
-        prefix = self.bot.command_prefix(self.bot, None)
+        prefix = self.bot.command_prefix[0]
         if isinstance(prefix, list):
             prefix = prefix[0]
         self.embedinator.footer = f"Use {prefix}customlisteners <command> or /listeners <command> to use a command!"
@@ -144,16 +188,24 @@ class CustomListener(CogWithData):
         self.embedinator.add_line("⠀⠀<name> - The name of the listener, which you will use with `remove` and `info`.")
         self.embedinator.add_line("⠀⠀<keyword> - What do you want me to pick out and respond to in a message?")
         self.embedinator.add_line("⠀⠀<reaction> - What do you want me to say in response?")
-        self.embedinator.add_line("⠀⠀[channel_specific=False] - Whether or not the listener only applies to the current channel. Defaults to False.")
+        self.embedinator.add_line(
+            "⠀⠀[channel_specific=False] - Whether or not the listener only applies to the current channel. Defaults to False.")
         self.embedinator.add_line("**remove** - Remove a listener from the current server.")
         self.embedinator.add_line("⠀⠀<name> - The name of the listener, which you can find with `list`.")
         self.embedinator.add_line()
         self.embedinator.add_line("These commands only work in servers.")
-        self.embedinator.add_line("Any parameter with multiple words will need to be surrounded with \" \" if you don't use the slash commands.")
+        self.embedinator.add_line(
+            "Any parameter with multiple words will need to be surrounded with \" \" if you don't use the slash commands.")
         for embed in self.embedinator.as_embeds(thumbnail_url=self.bot.user.avatar.url):
             await ctx.send(embed=embed)
         self.embedinator.clear()
 
+    @slash_custom_listeners.subcommand(name="help")
+    async def slash_help_server(self, interaction: nextcord.Interaction):
+        """
+        Helpful information about the CustomListeners suite.
+        """
+        return await self.help_server(SlashInteractionAliasContext(interaction, self.bot))
 
     def check_message(self, method: str, keyword: str, message: nextcord.Message):
         pattern_string = r'\b(?P<key>' + keyword + r')\b'

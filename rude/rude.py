@@ -8,11 +8,11 @@ import subprocess
 
 import nextcord
 import nextcord.ext.commands as commands
+from nextcord import slash_command, message_command
 import pyttsx3
 
-import interactions
 from bot import StatiCat
-from checks import check_permissions
+from checks import check_permissions, check_in_guild
 from cogwithdata import CogWithData
 
 
@@ -24,6 +24,30 @@ class Rude(CogWithData):
         self.beta_male_audio = self.get_path("beta_male_audio.mov")
         self.counter_ratio_chance = 0.05
 
+    async def _add_target(self, attack: str, ctx: commands.Context, target: Union[nextcord.Member, nextcord.User]):
+        if target.id is self.bot.user.id:
+            await ctx.send(f"I can't {attack} myself.")
+            return
+        if ctx.guild.id not in self.data[attack]:
+            self.data[attack][ctx.guild.id] = []
+        self.data[attack][ctx.guild.id].append(target.id)
+
+        await ctx.send(f"{target.mention} <3")
+
+    async def _remove_target(self, attack: str, ctx: commands.Context, target: Union[nextcord.Member, nextcord.User]):
+        if ctx.guild.id not in self.data[attack]:
+            return
+        if target.id in self.data[attack][ctx.guild.id]:
+            self.data[attack][ctx.guild.id].remove(target.id)
+            await ctx.send(f"You're off the hook for now, {target.mention}.")
+            return
+        await ctx.send(f"Consider yourself lucky, {target.mention}.")
+
+    async def _clear_guild(self, attack: str, ctx: commands.Context):
+        self.data[attack][ctx.guild.id] = []
+        await ctx.send("I'll stop now.")
+
+    @check_in_guild()
     @check_permissions(['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members'], False)
     @commands.group(name="mimic", pass_context=True)
     async def _mimic(self, ctx):
@@ -33,6 +57,7 @@ class Rude(CogWithData):
         if ctx.invoked_subcommand is None:
             await ctx.send("You have to invoke a subcommand.")
 
+    @check_in_guild()
     @check_permissions(['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members'], False)
     @commands.group(pass_context=True)
     async def silence(self, ctx):
@@ -42,75 +67,60 @@ class Rude(CogWithData):
         if ctx.invoked_subcommand is None:
             await ctx.send("You have to invoke a subcommand.")
 
-    @_mimic.command(name="add", pass_context=True)
-    async def mimic_add(self, ctx, target: Union[nextcord.Member, nextcord.User]):
-        """Add someone to the list of targets"""
-        if target.id is self.bot.user.id:
-            await ctx.send("I can't mimic myself.")
-            return
-        if ctx.guild.id not in self.data["mimic"]:
-            self.data["mimic"][ctx.guild.id] = []
-        self.data["mimic"][ctx.guild.id].append(target.id)
+    @check_in_guild()
+    @check_permissions(['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members'], False)
+    @commands.group(name="mock", pass_context=True)
+    async def _mock(self, ctx):
+        """Manage the mocking status"""
+        if "mock" not in self.data:
+            self.data["mock"] = {}
+        if ctx.invoked_subcommand is None:
+            await ctx.send("You have to invoke a subcommand.")
 
-        await ctx.send("{0.mention} <3".format(target))
+    @_mimic.command(name="add", pass_context=True)
+    async def mimic_add(self, ctx: commands.Context, target: Union[nextcord.Member, nextcord.User]):
+        """Add someone to the list of targets"""
+        await self._add_target("mimic", ctx, target)
 
     @_mimic.command(name="remove", pass_context=True)
-    async def mimic_remove(self, ctx, target: Union[nextcord.Member, nextcord.User]):
+    async def mimic_remove(self, ctx: commands.Context, target: Union[nextcord.Member, nextcord.User]):
         """Remove someone from the list of targets"""
-        if ctx.guild.id not in self.data["mimic"]:
-            self.data["mimic"][ctx.guild.id] = []
-        self.data["mimic"][ctx.guild.id].remove(target.id)
-
-        await ctx.send("You're off the hook for now, {0.mention}.".format(target))
+        await self._remove_target("mimic", ctx, target)
 
     @_mimic.command(name="clear", pass_context=True)
-    async def mimic_clear(self, ctx):
+    async def mimic_clear(self, ctx: commands.Context):
         """Clear the list of targets"""
-        self.data["mimic"][ctx.guild.id] = []
+        await self._clear_guild("mimic", ctx)
+        
+    @_mock.command(name="add", pass_context=True)
+    async def mock_add(self, ctx: commands.Context, target: Union[nextcord.Member, nextcord.User]):
+        """Add someone to the list of targets"""
+        await self._add_target("mock", ctx, target)
 
-        await ctx.send("I'll stop now.")
+    @_mock.command(name="remove", pass_context=True)
+    async def mock_remove(self, ctx: commands.Context, target: Union[nextcord.Member, nextcord.User]):
+        """Remove someone from the list of targets"""
+        await self._remove_target("mock", ctx, target)
+
+    @_mock.command(name="clear", pass_context=True)
+    async def mock_clear(self, ctx: commands.Context):
+        """Clear the list of targets"""
+        await self._clear_guild("mock", ctx)
 
     @silence.command(name="add", pass_context=True)
-    async def silence_add(self, ctx, target: Union[nextcord.Member, nextcord.User]):
+    async def silence_add(self, ctx: commands.Context, target: Union[nextcord.Member, nextcord.User]):
         """Add someone to the list of targets"""
-        if target.id is self.bot.user.id:
-            await ctx.send("I can't silence myself.")
-            return
-        if ctx.guild.id not in self.data["silence"]:
-            self.data["silence"][ctx.guild.id] = []
-        self.data["silence"][ctx.guild.id].append(target.id)
-
-        await ctx.send("{0.mention} <3".format(target))
-
-    # @silence.command(name="server", pass_context=True)
-    # async def silence_all_server(self, ctx: commands.Context):
-    #     """Silence an entire server"""
-    #     guild: nextcord.Guild = ctx.guild
-    #     members: List[nextcord.Member] = guild.members
-    #     logging.info(guild._members)
-    #     for member in members:
-    #         logging.info(member.id)
-    #         if not member.bot:
-    #             self.data["silence"].append(member.id)
-    #     self.update_data_file()
-    #
-    #     await ctx.send("You will regret this...")
+        await self._add_target("silence", ctx, target)
 
     @silence.command(name="remove", pass_context=True)
-    async def silence_remove(self, ctx, target: Union[nextcord.Member, nextcord.User]):
+    async def silence_remove(self, ctx: commands.Context, target: Union[nextcord.Member, nextcord.User]):
         """Remove someone from the list of targets"""
-        if ctx.guild.id not in self.data["silence"]:
-            self.data["silence"][ctx.guild.id] = []
-        self.data["silence"][ctx.guild.id].remove(target.id)
-
-        await ctx.send("You're off the hook for now, {0.mention}.".format(target))
+        await self._remove_target("silence", ctx, target)
 
     @silence.command(name="clear", pass_context=True)
-    async def silence_clear(self, ctx):
+    async def silence_clear(self, ctx: commands.Context):
         """Clear the list of targets"""
-        self.data["silence"][ctx.guild.id] = []
-
-        await ctx.send("I'll stop now.")
+        await self._clear_guild("silence", ctx)
 
     def get_silence_message(self, input_message) -> str:
         choices = [
@@ -165,6 +175,10 @@ class Rude(CogWithData):
                         if message.author.id in self.data["mimic"][message.guild.id]:
                             await message.channel.send(self.spongebobify(message))
                             return
+                    if message.guild.id in self.data["mock"]:
+                        if message.author.id in self.data["mock"][message.guild.id]:
+                            await message.channel.send("https://tenor.com/view/i-show-speed-dick-sucker-cock-gif-24582039")
+                            return
                 if self.check_ratio(message):
                     if random() < self.counter_ratio_chance:
                         sent_message = await message.reply("\@here let's ratio this bozo")
@@ -177,6 +191,8 @@ class Rude(CogWithData):
 
     @commands.Cog.listener()
     async def on_typing(self, channel: nextcord.TextChannel, user: Union[nextcord.User, nextcord.Member], when):
+        if channel.guild is None:
+            return
         if user.id is not self.bot.user.id:
             try:
                 if channel.guild.id in self.data["silence"]:
@@ -186,7 +202,7 @@ class Rude(CogWithData):
                 traceback.print_exception(type(error), error, error.__traceback__)
                 logging.error("Error in rude.", exc_info=(type(error), error, error.__traceback__))
 
-    @interactions.slash_command(name="betamale")
+    @slash_command(name="betamale")
     async def beta_male_shadow(self, interaction: nextcord.Interaction, name: str):
         """
         Shadow the Hedgehog thinks someone's a beta male.
@@ -219,12 +235,12 @@ class Rude(CogWithData):
             await interaction.edit_original_message(content="Yeah that didn't work. Sorry bud")
             logging.error("Error creating betamale video: ", exc_info=(type(error), error, error.__traceback__))
 
-    @interactions.message_command(name="Yeah that's a miss")
+    @message_command(name="Yeah that's a miss")
     async def react_miss(self, interaction: nextcord.Interaction, message: nextcord.Message):
         await interaction.response.send_message("I agree that *was* a miss", ephemeral=True)
         await message.reply("https://media.discordapp.net/attachments/702212719402811422/916187308565336124/thats_a_miss.gif")
 
-    @interactions.message_command(name="Yeah that's a hit")
+    @message_command(name="Yeah that's a hit")
     async def react_hit(self, interaction: nextcord.Interaction, message: nextcord.Message):
         await interaction.response.send_message("I agree that *was* a hit", ephemeral=True)
         await message.reply("https://cdn.discordapp.com/attachments/702212719402811422/916187308770852874/thats_a_hit.gif")
