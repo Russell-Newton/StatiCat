@@ -5,20 +5,17 @@ import re
 import io
 import string
 import codecs
-import traceback
 from typing import Dict, Tuple, Pattern, Callable, Optional, Awaitable
 
 import aiohttp
 import nextcord
 
 import nextcord.ext.commands as commands
-import selenium.common.exceptions
 from bs4 import BeautifulSoup
 from datetime import datetime
 import requests
 from fake_useragent import UserAgent
-from webdriver_manager.chrome import ChromeDriverManager
-from selenium import webdriver
+from playwright.async_api import async_playwright
 
 from bot import StatiCat
 
@@ -48,9 +45,9 @@ class ExtractVid(commands.Cog):
         self.pattern_map: Dict[str, Tuple[Pattern,
                                           Callable[[str], Awaitable[Optional[io.BytesIO]]]]] = {
             "ifunny": (re.compile("^https://ifunny.co/video/..+$"), self.extract_from_ifunny),
-            "tiktok": (re.compile("^https://vm.tiktok.com/[a-zA-Z0-9]+/\S*$"), self.extract_from_tiktok),
-            "tiktoklong": (
-            re.compile("^https://www.tiktok.com/@[a-zA-Z0-9_.]+/video/[0-9]+\S*$"), self.extract_from_tiktok_long)
+            "tiktokshort": (re.compile("^https://(www|vm).tiktok.com/\S+$"), self.extract_from_tiktok),
+            # "tiktoklong": (
+            # re.compile("^https://www.tiktok.com/@[a-zA-Z0-9_.]+/video/[0-9]+\S*$"), self.extract_from_tiktok_long)
         }
         self.agent = UserAgent().chrome
 
@@ -61,9 +58,9 @@ class ExtractVid(commands.Cog):
     @commands.command(name="getvid")
     async def get_video(self, ctx: commands.Context, link: str):
         """Extract a video from a link to a social media post."""
-        for k, v in self.pattern_map.items():
-            if ExtractVid._validate_link_format(link, v[0]):
-                data = await v[1](link)
+        for k, (pattern, extractor) in self.pattern_map.items():
+            if ExtractVid._validate_link_format(link, pattern):
+                data = await extractor(link)
                 if data is None:
                     await ctx.send("Could not get your video :(")
                 elif data in (TIKTOK_FAILED_EXTRACT, TIKTOK_FAILED_DOWNLOADADDR, TIKTOK_FAILED_ENDLINK):
@@ -93,31 +90,14 @@ class ExtractVid(commands.Cog):
                 except:
                     return None
 
-    async def extract_from_tiktok_long(self, full_link: str):
-        headers = {
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9",
-            "authority": "www.tiktok.com",
-            "path": full_link.split("tiktok.com")[1],
-            "Accept-Encoding": "gzip, deflate",
-            "Connection": "keep-alive",
-            "Host": "www.tiktok.com",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36"
-        }
-        cookies = get_tiktok_cookies()
-
-        with requests.get(full_link, headers=headers, proxies=None, cookies=cookies) as r:
-            html = r.text
-            # nonce_start = '<head nonce="'
-            # nonce_end = '">'
-            # nonce = html.split(nonce_start)[1].split(nonce_end)[0]
-            # j_raw = html.split(
-            #     '<script id="__NEXT_DATA__" type="application/json" nonce="%s" crossorigin="anonymous">'
-            #     % nonce
-            # )[1].split("</script>")[0]
-            # src = json.loads(j_raw)["props"]["pageProps"]["itemInfo"]["itemStruct"]["video"]["downloadAddr"]
-
+    async def extract_from_tiktok(self, link: str):
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+            await page.goto(link)
             try:
-                src_raw = html.split("\"downloadAddr\":\"")[1]
+                content = await page.content()
+                src_raw = content.split("\"downloadAddr\":\"")[1]
             except IndexError:
                 return TIKTOK_FAILED_EXTRACT
             try:
@@ -126,60 +106,12 @@ class ExtractVid(commands.Cog):
                 return TIKTOK_FAILED_ENDLINK
             src = codecs.decode(src_raw, "unicode-escape")
 
-        headers = {
-            "Accept": "*/*",
-            "Accept-Encoding": "identity;q=1, *;q=0",
-            "Accept-Language": "en-US;en;q=0.9",
-            "Cache-Control": "no-cache",
-            "Connection": "keep-alive",
-            "Host": src.split("/")[2],
-            "Pragma": "no-cache",
-            "Range": "bytes=0-",
-            "Referer": "https://www.tiktok.com/",
-            "User-Agent": self.agent
-        }
-
-        # with requests.get(src, headers=headers, proxies=None, cookies=cookies) as r:
-        #     try:
-        #         return io.BytesIO(r.content)
-        #     except:
-        #         return None
-
-        async with aiohttp.ClientSession(headers=headers, cookies=cookies) as session:
+        async with aiohttp.ClientSession() as session:
             async with session.get(src) as resp:
                 try:
                     return io.BytesIO(await resp.read())
                 except:
                     return None
-
-    async def extract_from_tiktok(self, link: str):
-        """
-        Based on https://github.com/davidteather/TikTok-Api
-        """
-        options = webdriver.ChromeOptions()
-        options.add_argument("--headless")
-        options.add_argument(
-            "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.88 Safari/537.36")
-        options.add_argument("--disable-gpu")
-        try:
-            browser = webdriver.Chrome(executable_path=ChromeDriverManager(#version="100.0.4896.60",
-                                                                           log_level=0,
-                                                                           print_first_line=False).install(),
-                                       options=options)
-        except selenium.common.exceptions.SessionNotCreatedException as error:
-            traceback.print_exception(type(error), error, error.__traceback__)
-            return WEBDRIVER_SESSION_FAILED
-
-        browser.get(link)
-
-        soup = BeautifulSoup(browser.page_source, features="lxml")
-        browser.quit()
-        try:
-            full_link = soup.find("link", {"rel": "canonical"})["href"]
-        except TypeError:
-            return TIKTOK_FAILED_EXTRACT
-
-        return await self.extract_from_tiktok_long(full_link)
 
     @commands.Cog.listener()
     async def on_message(self, message: nextcord.Message):
@@ -187,9 +119,9 @@ class ExtractVid(commands.Cog):
         channel: nextcord.TextChannel = message.channel
         author: nextcord.User = message.author
 
-        for k, v in self.pattern_map.items():
-            if ExtractVid._validate_link_format(content, v[0]):
-                data = await v[1](content)
+        for k, (pattern, extractor) in self.pattern_map.items():
+            if ExtractVid._validate_link_format(content, pattern):
+                data = await extractor(content)
                 if data in (TIKTOK_FAILED_EXTRACT, TIKTOK_FAILED_DOWNLOADADDR, TIKTOK_FAILED_ENDLINK):
                     await message.reply(f"I couldn't get that video from TikTok ({data}). Try a second time or with the long link :)")
                 elif data in (WEBDRIVER_SESSION_FAILED,):

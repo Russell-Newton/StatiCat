@@ -13,8 +13,7 @@ import nextcord.ext.commands as commands
 from PIL import Image, ImageDraw
 from bs4 import BeautifulSoup
 from nextcord import slash_command
-from selenium.common.exceptions import WebDriverException, SessionNotCreatedException
-from msedge.selenium_tools import Edge, EdgeOptions
+from playwright.async_api import async_playwright
 
 from bot import StatiCat
 from checks import check_permissions
@@ -104,26 +103,29 @@ class General(CogWithData):
             await ctx.send("Only pokemon from Gen I to Gen V please :).")
             return
 
-        options = EdgeOptions()
-        options.use_chromium = True
-        options.add_argument("headless")
-        options.add_argument("disable-gpu")
-        try:
-            browser = Edge(options=options)
-        except SessionNotCreatedException as e:
-            await ctx.send(
-                "Something is out of date with this command. I'm sending a message to the owner about this. Thank you for your patience :)")
-            await self.bot.message_owner(f"Ayo update the msedgedriver!\n{type(e)}\t{str(e)}\n{str(e.__traceback__)}")
-            return
+        # options = EdgeOptions()
+        # options.use_chromium = True
+        # options.add_argument("headless")
+        # options.add_argument("disable-gpu")
+        # try:
+        #     browser = Edge(options=options)
+        # except SessionNotCreatedException as e:
+        #     await ctx.send(
+        #         "Something is out of date with this command. I'm sending a message to the owner about this. Thank you for your patience :)")
+        #     await self.bot.message_owner(f"Ayo update the msedgedriver!\n{type(e)}\t{str(e)}\n{str(e.__traceback__)}")
+        #     return
+        #
+        # try:
+        #     browser.get(self.pokepalette_url + pokemon_lower)
+        # except WebDriverException:
+        #     await ctx.send("The pokepalette website isn't up :(...")
+        #     return
+        async with async_playwright() as p:
+            browser = await p.chromium.launch()
+            page = await browser.new_page()
+            await page.goto(self.pokepalette_url + pokemon_lower)
+            soup = BeautifulSoup(await page.content(), features="lxml")
 
-        try:
-            browser.get(self.pokepalette_url + pokemon_lower)
-        except WebDriverException:
-            await ctx.send("The pokepalette website isn't up :(...")
-            return
-
-        soup = BeautifulSoup(browser.page_source, features="lxml")
-        browser.close()
         sprite = await self.get_pokemon_sprite(pokemon_lower)
 
         background_color = self.convert_style_to_color(soup.find("div", id="app")["style"])

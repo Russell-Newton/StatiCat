@@ -191,7 +191,7 @@ class Rude(CogWithData):
 
     @commands.Cog.listener()
     async def on_typing(self, channel: nextcord.TextChannel, user: Union[nextcord.User, nextcord.Member], when):
-        if channel.guild is None:
+        if not hasattr(channel, "guild"):
             return
         if user.id is not self.bot.user.id:
             try:

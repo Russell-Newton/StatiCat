@@ -4,7 +4,6 @@ torchvision
 matplotlib
 pillow
 scipy
-msedge-selenium-tools
 wikipedia
 opencv-python
 cmake
@@ -14,7 +13,6 @@ imageio
 imageio-ffmpeg
 lxml
 pandas
-webdriver-manager
 networkx
 scikit-learn
 imutils
@@ -23,3 +21,4 @@ pyyaml
 tqdm
 fake-useragent
 pyttsx3
+playwright
