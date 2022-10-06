@@ -18,8 +18,8 @@ from cogwithdata import CogWithData
 
 class Rude(CogWithData):
     def __init__(self, bot: StatiCat):
+        super().__init__()
         self.bot = bot
-        super().__init__("targets")
         self.beta_male_video = self.get_path("beta_male.mov")
         self.beta_male_audio = self.get_path("beta_male_audio.mov")
         self.counter_ratio_chance = 0.05

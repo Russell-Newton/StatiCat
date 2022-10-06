@@ -14,8 +14,8 @@ class Dad(CogWithData):
     """Dad-Bot"""
 
     def __init__(self, bot: StatiCat):
+        super().__init__()
         self.bot = bot
-        super().__init__("imdadblacklist")
         self.funny_chance = 0.04
         self.dad_chance = 0.15
 
@@ -37,7 +37,6 @@ class Dad(CogWithData):
         if "blacklist" not in self.data:
             self.data["blacklist"] = []
         self.data["blacklist"].append(ctx.guild.id)
-        self.update_data_file()
         await ctx.send("No longer responding with the classic joke.")
 
     @commands.command(name="startdad")
@@ -49,7 +48,6 @@ class Dad(CogWithData):
             self.data["blacklist"] = []
         if ctx.guild.id in self.data["blacklist"]:
             self.data["blacklist"].remove(ctx.guild.id)
-        self.update_data_file()
         await ctx.send("Time to become funny.")
 
     @commands.Cog.listener()
@@ -77,8 +75,8 @@ class Dad(CogWithData):
                     #     await message.reply(f"\"{word}\"!? It's 2021. Keep it to \"{word[:-2]}a\", please.")
                     return
                 
-        if random() < self.dad_chance and content.lower().startswith("i'm ") or content.lower().startswith(
-                'im ') or content.lower().startswith('i am '):
+        if random() < self.dad_chance and (content.lower().startswith("i'm ") or content.lower().startswith(
+                'im ') or content.lower().startswith('i am ')):
             nameStart = content.find('m') + 1
             nameEnd = content.find('.')
             if nameEnd > 0:

@@ -481,9 +481,9 @@ class MessageCommand(ApplicationCommand, _type=3):
 class Interactions(CogWithData):
 
     def __init__(self, bot: StatiCat):
+        super().__init__()
         self.bot = bot
         self.commands: ApplicationCommandsDict = ApplicationCommandsDict(self.bot)
-        super().__init__()
 
     async def get_deployed_global_commands(self) -> list[dict]:
         return await self.bot.http.get_global_commands(self.bot.user.id)

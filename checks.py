@@ -66,7 +66,7 @@ def is_owner_or_whitelist():
     """
 
     async def predicate(ctx: commands.Context):
-        if await ctx.bot.is_owner(ctx.author) or ctx.author.id in ctx.bot.owner_data["special command whitelist"]:
+        if await ctx.bot.is_owner(ctx.author) or ctx.author.id in ctx.bot.global_data["special command whitelist"]:
             return True
         return False
 

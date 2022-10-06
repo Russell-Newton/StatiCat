@@ -41,8 +41,8 @@ class General(CogWithData):
     """General commands for general needs."""
 
     def __init__(self, bot: StatiCat):
-        self.bot = bot
         super().__init__()
+        self.bot = bot
 
         # pokepalette stuff
         self.pokepalette_url = "http://pokepalettes.com/#"
@@ -191,14 +191,14 @@ class General(CogWithData):
 
         return palette
 
-    @commands.command()
-    async def invite(self, ctx):
+    @commands.command(name="invite")
+    async def _invite(self, ctx):
         """Get a link to invite me to your server!"""
         await ctx.send(f'Invite me! {StatiCat.get_invite_link()}')
 
     @slash_command()
     async def invite(self, interaction: nextcord.Interaction):
-        return await self.invite(SlashInteractionAliasContext(interaction, self.bot))
+        return await self._invite(SlashInteractionAliasContext(interaction, self.bot))
 
     @commands.command(name="8ball")
     async def eight_ball(self, ctx):

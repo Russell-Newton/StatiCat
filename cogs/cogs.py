@@ -63,6 +63,7 @@ class Cogs(commands.Cog):
                 if not reloading:
                     await ctx.send(f"Loaded {cog_name}!")
                     logging.warning(f"Loaded {cog_name}!")
+                    await self.bot.sync_all_application_commands()
 
                 return True
             except Exception as e:
@@ -110,6 +111,7 @@ class Cogs(commands.Cog):
                 if not reloading:
                     await ctx.send(f"Unloaded {cog_name}!")
                     logging.warning(f"Unloaded {cog_name}!")
+                    await self.bot.sync_all_application_commands()
 
             except Exception as e:
                 traceback.print_exception(type(e), e, e.__traceback__)
@@ -143,6 +145,8 @@ class Cogs(commands.Cog):
 
             await ctx.send(message)
             logging.warning(message)
+
+        await self.bot.sync_all_application_commands()
 
     @commands.is_owner()
     @commands.command(name="listcogs", aliases=["lc", "cogslist", "cl"])

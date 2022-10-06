@@ -74,10 +74,9 @@ fabric.properties
 __pycache__/
 *.py[cod]
 
-dad/imdadblacklist.json
-.idea/StatiCat.iml
-customlistener/listeners.json
-rude/targets.json
-
 _logs/
 .idea/misc.xml
+.idea/StatiCat.iml
+
+.env
+**/*_data.json

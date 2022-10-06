@@ -4,9 +4,10 @@ import re
 import nextcord
 import nextcord.ext.commands as commands
 from nextcord import slash_command
+from nextcord.ext import application_checks
 
 from bot import Embedinator, StatiCat
-from checks import check_permissions, check_in_guild, check_in_private
+from checks import check_permissions, check_in_guild, check_in_private, is_owner_or_whitelist
 import interactions_checks
 from cogwithdata import CogWithData
 from interactions import SlashInteractionAliasContext
@@ -16,22 +17,26 @@ class CustomListener(CogWithData):
     _perms_to_check = ['administrator', 'manage_guild', 'manage_messages', 'kick_members', 'ban_members']
 
     def __init__(self, bot: StatiCat):
+        super().__init__()
         self.bot = bot
-        super().__init__("listeners")
         self.embedinator = Embedinator(**{"title": "**Custom Listeners**"})
         self.method_options = ["anywhere", "start", "end"]
 
     @commands.check_any(
         check_permissions(_perms_to_check, False),
-        check_in_private())
+        check_in_private(),
+        is_owner_or_whitelist())
     @commands.group(name="customlisteners", aliases=["listeners", "clist"])
     async def custom_listeners(self, ctx: commands.Context):
         """Commands for managing custom listeners."""
         pass
 
-    @interactions_checks.check_one(_perms_to_check)
     @slash_command(name="listeners",
                    dm_permission=False)
+    @application_checks.check_any(
+        interactions_checks.check_permissions(_perms_to_check, False),
+        interactions_checks.is_owner_or_whitelist()
+    )
     async def slash_custom_listeners(self, interaction: nextcord.Interaction):
         """Commands for managing custom listeners."""
         pass

@@ -1,31 +1,52 @@
-import argparse
 import asyncio
 import itertools
 import logging
 import os
 import sys
-import traceback
 from datetime import datetime
 from importlib import import_module
 from importlib.machinery import ModuleSpec
-from typing import List
 from random import choice
+from typing import List
 
+import click
 import nextcord
 import nextcord.ext.commands as commands
+from dotenv import load_dotenv
 
 from autosavedict import AutoSavingDict
 from checks import NoPermissionError
 
 
+TOKEN_KEY = "BOT_TOKEN"
+ENV_FILE = ".env"
+
+
 bot = None
+
+
+def load_env():
+    load_dotenv()
+
+    fields_to_add = []
+    fail = False
+    if TOKEN_KEY not in os.environ:
+        fields_to_add.append(TOKEN_KEY)
+        fail = True
+    elif os.environ[TOKEN_KEY] == "":
+        fail = True
+
+    with open(".env", "a+") as f:
+        for field in fields_to_add:
+            f.write(f"{field}=\n")
+
+    if fail:
+        raise EnvironmentError("Failed to load environment from .env file.")
 
 
 def restart_after_shutdown():
     logging.warning("Shutdown complete. Attempting to restart...")
-    if "--messageowner" not in sys.argv:
-        sys.argv.append("--messageowner")
-    os.execv(sys.executable, ['python'] + sys.argv)
+    os.execv(sys.executable, sys.argv)
 
 
 def clean_files():
@@ -77,9 +98,9 @@ class Embedinator(commands.Paginator):
         for page, number in zip(self.pages, range(len(self.pages))):
             field_content = ""
             embed = nextcord.Embed(title=self.title,
-                                  color=color,
-                                  description="*Page {} of {}*".format(str(number + 1), len(self.pages))
-                                  ).set_thumbnail(
+                                   color=color,
+                                   description="*Page {} of {}*".format(str(number + 1), len(self.pages))
+                                   ).set_thumbnail(
                 url=thumbnail_url
             )
             embed.set_footer(text=self.footer)
@@ -215,14 +236,14 @@ class StatiCat(commands.Bot):
         self.should_restart = False
         self.send_startup_message_to_owner = False
         self.global_data = AutoSavingDict("global_data.json")
-        self.owner_data = AutoSavingDict("owner_data.json")
 
         super().__init__(command_prefix=self.get_prefixes(), **options)
 
     @staticmethod
     def get_invite_link():
         perms: nextcord.Permissions = nextcord.Permissions.text()
-        return nextcord.utils.oauth_url(client_id='702205746493915258', permissions=perms, scopes=["bot", "applications.commands"])
+        return nextcord.utils.oauth_url(client_id='702205746493915258', permissions=perms,
+                                        scopes=["bot", "applications.commands"])
 
     @staticmethod
     def print_invite_link():
@@ -236,19 +257,15 @@ class StatiCat(commands.Bot):
         return [nextcord.Color(int(hex_val, 0)) for hex_val in hexes]
 
     async def load_cogs(self):
-        print("Loading cogs...")
         logging.info("Loading cogs...")
         _cogs = self.global_data["loaded cogs"]
         for cog in _cogs:
             try:
                 await self._load_cog_silent(cog)
-                print("Loaded {}!".format(cog))
                 logging.info(f"Loaded {cog}!")
             except Exception as error:
-                traceback.print_exception(type(error), error, error.__traceback__)
                 logging.exception("Failed to load a cog.")
 
-        print("Done!\n")
         logging.info("Done!\n")
 
     async def _load_cog_silent(self, cog_name):
@@ -263,14 +280,12 @@ class StatiCat(commands.Bot):
             mod: ModuleSpec = import_module(cog_name.lower()).__spec__
         except ImportError as e:
             if e.name.lower() == cog_name.lower():
-                print("No cog of the name '{}' was found.".format(cog_name))
                 logging.warning(f"No cog of the name '{cog_name}' was found.")
             raise e
 
         lib = mod.loader.load_module()
         if not hasattr(lib, "setup"):
             del lib
-            print("Cog '{}' doesn't have a setup function.".format(cog_name))
             logging.warning(f"Cog '{cog_name}' doesn't have a setup function.")
             return
 
@@ -281,15 +296,14 @@ class StatiCat(commands.Bot):
                 lib.setup(self)
         except Exception as e:
             logging.exception("Caught an exception while running a cog setup script.")
-            print(str(e))
             raise e
 
     async def on_ready(self):
-        print(f'Logged in as {self.user}')
         logging.info(f"Logged in as {self.user}")
 
         await self.load_cogs()
-        self.help_command = EmbeddingHelpCommand(self.get_color_palette(), **{"title": "{} Help Menu".format(self.user.name)})
+        self.help_command = EmbeddingHelpCommand(self.get_color_palette(),
+                                                 **{"title": "{} Help Menu".format(self.user.name)})
         self.print_invite_link()
         await self.change_presence(activity=nextcord.Game(name="Type s!help for help!"))
 
@@ -304,7 +318,6 @@ class StatiCat(commands.Bot):
 
     async def on_command_error(self, ctx: commands.Context, error: commands.CommandError):
         if isinstance(error, commands.CheckFailure):
-            traceback.print_exception(type(error), error, error.__traceback__)
             logging.error("Caught a command checks error.", exc_info=(type(error), error, error.__traceback__))
             return
         if isinstance(error, NoPermissionError):
@@ -320,7 +333,6 @@ class StatiCat(commands.Bot):
             await ctx.send("Bad argument. {}".format(str(error)))
             await ctx.send("Try `{0.prefix}help <command_name>` for usage information!".format(ctx))
         elif not isinstance(error, commands.CommandNotFound):
-            traceback.print_exception(type(error), error, error.__traceback__)
             logging.error("Caught a command error.", exc_info=(type(error), error, error.__traceback__))
             await ctx.send(
                 "Oops! You just caused an error ({} caused by {})! Try `{}help <command_name>` for usage information!".format(
@@ -341,29 +353,24 @@ class StatiCat(commands.Bot):
         await owner.send(message)
 
 
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Optional bot parameters.")
-    parser.add_argument('-l', '--loglevel',
-                        dest='loglevel',
-                        type=str,
-                        default="INFO",
-                        help="The logging level for the bot (default: INFO)")
-    parser.add_argument('--messageowner',
-                        dest='messageowner',
-                        action='store_true')
-
-    args = parser.parse_args()
+@click.command()
+@click.option("-l",
+              "--log-level",
+              type=click.Choice(list(logging._nameToLevel.keys()), case_sensitive=False),
+              default="INFO")
+@click.option("-m", "--message-owner", is_flag=True)
+def main(log_level, message_owner):
+    global bot
 
     clean_files()
 
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-    if not isinstance(numeric_level, int):
-        raise ValueError('Invalid log level: %s' % args.loglevel)
+    numeric_level = logging._nameToLevel[log_level]
 
     logging.basicConfig(filename=f'_logs/{datetime.now().strftime("%m-%d-%Y %H_%M_%S.log")}',
-                        level=args.loglevel,
+                        level=numeric_level,
                         format='%(levelname)s::%(asctime)s::%(message)s',
                         datefmt='%m/%d/%Y %H:%M:%S')
+    logging.getLogger().addHandler(logging.StreamHandler(sys.stdout))
 
     intents: nextcord.Intents = nextcord.Intents.default()
     intents.members = True
@@ -372,11 +379,20 @@ if __name__ == '__main__':
 
     bot = StatiCat(intents=intents)
 
-    if args.messageowner:
+    if message_owner:
         bot.send_startup_message_to_owner = True
 
     logging.info(sys.argv)
 
-    bot.run(bot.owner_data["Token"])
+    bot.run(os.environ[TOKEN_KEY])
     if bot.should_restart:
         restart_after_shutdown()
+
+
+if __name__ == '__main__':
+    try:
+        load_env()
+    except EnvironmentError:
+        print("Failed to load environment config from .env file. Please add the necessary fields that have been added")
+    else:
+        main()

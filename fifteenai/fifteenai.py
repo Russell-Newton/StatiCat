@@ -12,8 +12,8 @@ import aiohttp
 
 class FifteenAI(CogWithData):
     def __init__(self, bot: StatiCat):
+        super().__init__()
         self.bot = bot
-        super().__init__("fifteenai")
 
         self.headers = {
             'authority': 'api.15.ai',
