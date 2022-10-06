@@ -18,7 +18,7 @@
     "0xe64a52",
     "0x943952"
   ],
-  "deny odds": 35,
+  "deny odds": 30,
   "deny choices": [
     "Not right now.",
     "No wanna.",
@@ -35,5 +35,7 @@
     "Not gonna do it.",
     "You'd like for me to do that, wouldn't you?",
     "I don't think I will."
-  ]
+  ],
+  "admin_locked_servers": [],
+  "special_command_whitelist": []
 }
