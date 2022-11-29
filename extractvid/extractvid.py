@@ -1,29 +1,26 @@
-import json
+import asyncio
+import glob
+import io
 import logging
+import os
 import random
 import re
-import io
 import string
-import codecs
+import urllib.request
+from datetime import datetime
+from os import path
 from typing import Dict, Tuple, Pattern, Callable, Optional, Awaitable
 
 import aiohttp
 import nextcord
-
 import nextcord.ext.commands as commands
-from bs4 import BeautifulSoup
-from datetime import datetime
 import requests
+from bs4 import BeautifulSoup
 from fake_useragent import UserAgent
-from playwright.async_api import async_playwright
+from tiktokapipy.async_api import AsyncTikTokAPI, TikTokAPIError
+from tiktokapipy.models.video import Video
 
 from bot import StatiCat
-
-
-TIKTOK_FAILED_EXTRACT = "Couldn't extract full link from small link"
-TIKTOK_FAILED_DOWNLOADADDR = "Couldn't find the downloadAddr in the page data"
-TIKTOK_FAILED_ENDLINK = "Couldn't find the end of the downloadAddr"
-WEBDRIVER_SESSION_FAILED = "Cached webdriver is out of date"
 
 
 def get_tiktok_cookies():
@@ -63,8 +60,9 @@ class ExtractVid(commands.Cog):
                 data = await extractor(link)
                 if data is None:
                     await ctx.send("Could not get your video :(")
-                elif data in (TIKTOK_FAILED_EXTRACT, TIKTOK_FAILED_DOWNLOADADDR, TIKTOK_FAILED_ENDLINK):
-                    await ctx.reply(f"I couldn't get that video from TikTok ({data}). Try a second time or with the long link :)")
+                elif isinstance(data, TikTokAPIError):
+                    await ctx.reply(
+                        f"I couldn't get that video from TikTok [_{data}_]. Try a second time or with the long link :)")
                 else:
                     file = nextcord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4')
                     await ctx.send(file=file)
@@ -91,27 +89,53 @@ class ExtractVid(commands.Cog):
                     return None
 
     async def extract_from_tiktok(self, link: str):
-        async with async_playwright() as p:
-            browser = await p.chromium.launch()
-            page = await browser.new_page()
-            await page.goto(link)
+        async with AsyncTikTokAPI(emulate_mobile=True, navigation_retries=2, navigation_timeout=10000) as api:
             try:
-                content = await page.content()
-                src_raw = content.split("\"downloadAddr\":\"")[1]
-            except IndexError:
-                return TIKTOK_FAILED_EXTRACT
-            try:
-                src_raw = src_raw.split("\",")[0]
-            except IndexError:
-                return TIKTOK_FAILED_ENDLINK
-            src = codecs.decode(src_raw, "unicode-escape")
+                video: Video = await api.video(link)
+                if video.image_post:
+                    vf = "\"scale=iw*min(1080/iw\,1920/ih):ih*min(1080/iw\,1920/ih)," \
+                         "pad=1080:1920:(1080-iw)/2:(1920-ih)/2," \
+                         "format=yuv420p\""
+                    for i, image_data in enumerate(video.image_post.images):
+                        url1, url2, url3 = image_data.image_url.url_list
+                        urllib.request.urlretrieve(url3, path.join(self.directory, f"temp_{video.id}_{i:02}.jpg"))
+                    urllib.request.urlretrieve(video.music.play_url, path.join(self.directory, f"temp_{video.id}.mp3"))
+                    command = [
+                        "ffmpeg",
+                        "-r 2/5",
+                        f"-i {self.directory}/temp_{video.id}_%02d.jpg",
+                        f"-i {self.directory}/temp_{video.id}.mp3",
+                        "-r 30",
+                        f"-vf {vf}",
+                        "-acodec copy",
+                        "-shortest",
+                        f"{self.directory}/temp_{video.id}.mp4",
+                        "-y"
+                    ]
+                    ffmpeg_proc = await asyncio.create_subprocess_shell(
+                        " ".join(command),
+                        stdout=asyncio.subprocess.PIPE,
+                        stderr=asyncio.subprocess.PIPE,
+                    )
+                    _, stderr = await ffmpeg_proc.communicate()
+                    generated_files = glob.glob(path.join(self.directory, f"temp_{video.id}*"))
 
-        async with aiohttp.ClientSession() as session:
-            async with session.get(src) as resp:
-                try:
-                    return io.BytesIO(await resp.read())
-                except:
-                    return None
+                    if not path.exists(path.join(self.directory, f"temp_{video.id}.mp4")):
+                        logging.error(stderr.decode("utf-8"))
+                        ret = TikTokAPIError("Something went wrong with piecing the slideshow together")
+                    else:
+                        with open(path.join(self.directory, f"temp_{video.id}.mp4"), "rb") as f:
+                            ret = io.BytesIO(f.read())
+
+                    for file in generated_files:
+                        os.remove(file)
+
+                    return ret
+                async with aiohttp.ClientSession() as session:
+                    async with session.get(video.video.download_addr) as resp:
+                        return io.BytesIO(await resp.read())
+            except TikTokAPIError as e:
+                return e
 
     @commands.Cog.listener()
     async def on_message(self, message: nextcord.Message):
@@ -122,10 +146,9 @@ class ExtractVid(commands.Cog):
         for k, (pattern, extractor) in self.pattern_map.items():
             if ExtractVid._validate_link_format(content, pattern):
                 data = await extractor(content)
-                if data in (TIKTOK_FAILED_EXTRACT, TIKTOK_FAILED_DOWNLOADADDR, TIKTOK_FAILED_ENDLINK):
-                    await message.reply(f"I couldn't get that video from TikTok ({data}). Try a second time or with the long link :)")
-                elif data in (WEBDRIVER_SESSION_FAILED,):
-                    await message.reply(f"I couldn't get that video for you ({data}). <@{self.bot.owner_id}> if you're here, check this out and fix it please :)")
+                if isinstance(data, TikTokAPIError):
+                    await message.reply(
+                        f"I couldn't get that video from TikTok [_{data}_]. Try a second time or with the long link :)")
                 elif data is not None:
                     video = nextcord.File(data, f'{datetime.now().strftime("%m%d%Y%H%M%S")}.mp4')
                     try:

@@ -25,20 +25,23 @@ ENV_FILE = ".env"
 bot = None
 
 
+def add_empty_env_keys(*keys):
+    with open(".env", "a+") as f:
+        for key in keys:
+            if key not in os.environ:
+                f.write(f"{key}=\n")
+
+
 def load_env():
     load_dotenv()
 
-    fields_to_add = []
+    keys_to_add = []
     fail = False
-    if TOKEN_KEY not in os.environ:
-        fields_to_add.append(TOKEN_KEY)
-        fail = True
-    elif os.environ[TOKEN_KEY] == "":
+    if TOKEN_KEY not in os.environ or os.environ[TOKEN_KEY] == "":
+        keys_to_add.append(TOKEN_KEY)
         fail = True
 
-    with open(".env", "a+") as f:
-        for field in fields_to_add:
-            f.write(f"{field}=\n")
+    add_empty_env_keys(*keys_to_add)
 
     if fail:
         raise EnvironmentError("Failed to load environment from .env file.")
@@ -258,7 +261,11 @@ class StatiCat(commands.Bot):
 
     async def load_cogs(self):
         logging.info("Loading cogs...")
-        _cogs = self.global_data["loaded cogs"]
+        _cogs: list = self.global_data["loaded cogs"]
+        if "Cogs" not in _cogs:
+            _cogs.insert(0, "Cogs")
+        if "Owner" not in _cogs:
+            _cogs.insert(0, "Owner")
         for cog in _cogs:
             try:
                 await self._load_cog_silent(cog)

@@ -9,6 +9,7 @@ pillow
 playwright
 python-dotenv
 pyttsx3
+tiktokapipy
 
 requests
 aiohttp
