@@ -42,7 +42,7 @@ class ExtractVid(commands.Cog):
         self.pattern_map: Dict[str, Tuple[Pattern,
                                           Callable[[str], Awaitable[Optional[io.BytesIO]]]]] = {
             "ifunny": (re.compile("^https://ifunny.co/video/..+$"), self.extract_from_ifunny),
-            "tiktokshort": (re.compile("^https://(www|vm).tiktok.com/\S+$"), self.extract_from_tiktok),
+            "tiktokshort": (re.compile("^https://(www|vm|m).tiktok.com/\S+$"), self.extract_from_tiktok),
             # "tiktoklong": (
             # re.compile("^https://www.tiktok.com/@[a-zA-Z0-9_.]+/video/[0-9]+\S*$"), self.extract_from_tiktok_long)
         }
@@ -97,8 +97,8 @@ class ExtractVid(commands.Cog):
                          "pad=1080:1920:(1080-iw)/2:(1920-ih)/2," \
                          "format=yuv420p\""
                     for i, image_data in enumerate(video.image_post.images):
-                        url1, url2, url3 = image_data.image_url.url_list
-                        urllib.request.urlretrieve(url3, path.join(self.directory, f"temp_{video.id}_{i:02}.jpg"))
+                        url = image_data.image_url.url_list[-1]
+                        urllib.request.urlretrieve(url, path.join(self.directory, f"temp_{video.id}_{i:02}.jpg"))
                     urllib.request.urlretrieve(video.music.play_url, path.join(self.directory, f"temp_{video.id}.mp3"))
                     command = [
                         "ffmpeg",
@@ -108,7 +108,7 @@ class ExtractVid(commands.Cog):
                         "-r 30",
                         f"-vf {vf}",
                         "-acodec copy",
-                        "-shortest",
+                        f"-t {len(video.image_post.images) * 2.5}",
                         f"{self.directory}/temp_{video.id}.mp4",
                         "-y"
                     ]
